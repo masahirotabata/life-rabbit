@@ -12,8 +12,10 @@ export default function MyPage() {
   const [s, setS] = useState<Summary | null>(null);
 
   useEffect(() => {
-    api.get("/api/me/summary").then(res => setS(res.data));
-  }, []);
+    api
+      .get<Summary>("/api/me/summary")
+      .then((res: { data: Summary }) => setS(res.data));
+  }, [api]);
 
   return (
     <div className="stack">
@@ -24,10 +26,14 @@ export default function MyPage() {
             <div className="muted">潜在貯金（未達成）</div>
             <div className="big">${s.potentialTotal.toFixed(2)}</div>
 
-            <div className="muted" style={{marginTop: 12}}>実現済み貯金（達成）</div>
+            <div className="muted" style={{ marginTop: 12 }}>
+              実現済み貯金（達成）
+            </div>
             <div className="big">${s.achievedTotal.toFixed(2)}</div>
 
-            <div className="muted" style={{marginTop: 12}}>通貨獲得回数</div>
+            <div className="muted" style={{ marginTop: 12 }}>
+              通貨獲得回数
+            </div>
             <div className="big">{s.currencyCount}</div>
           </>
         ) : (

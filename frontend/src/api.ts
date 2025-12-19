@@ -1,10 +1,8 @@
 // src/api.ts
 
 const API_BASE_URL =
-  // 環境変数があればそれを優先（ローカル開発用）
   import.meta.env.VITE_API_BASE_URL ?? 'https://liferabbit-api.onrender.com';
 
-// axios っぽいインターフェースだけ合わせたラッパ
 export interface ApiResponse<T> {
   data: T;
 }
@@ -39,8 +37,12 @@ export const api = {
       method: 'POST',
       body: body != null ? JSON.stringify(body) : undefined
     }),
-
-  // 必要になったら put/delete もあとで足せます
 };
+
+// ⭐ ここを追加
+export function useApi() {
+  // コンポーネント側で `const api = useApi();` として使えるようにラッパを返す
+  return api;
+}
 
 export default api;
