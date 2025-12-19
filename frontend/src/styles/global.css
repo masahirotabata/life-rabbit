@@ -1,0 +1,392 @@
+:root { color-scheme: light; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  background: #f7f8fb;
+  color: #111;
+}
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+.card {
+  background: #fff;
+  border: 1px solid #e6e8ef;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+}
+.row { display: flex; gap: 12px; align-items: center; }
+.row-between { display:flex; justify-content: space-between; align-items:center; }
+h1 { margin: 0 0 12px; font-size: 40px; }
+input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d7dbe7;
+  border-radius: 10px;
+  font-size: 14px;
+}
+label { font-size: 13px; color: #333; display:block; margin: 12px 0 6px; }
+button {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #d7dbe7;
+  background: #fff;
+  cursor: pointer;
+}
+button.primary {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+.error {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #ffb4b4;
+  background: #fff2f2;
+  color: #8a1f1f;
+  white-space: pre-wrap;
+}
+.small { color:#666; font-size: 13px; }
+hr { border:0; border-top: 1px solid #eceef5; margin: 14px 0; }
+.task { display:flex; justify-content:space-between; gap: 10px; padding: 10px 0; }
+.badge { font-size:12px; padding: 3px 8px; border:1px solid #e6e8ef; border-radius: 999px; color:#444; }
+/* ===== MoneyRain Overlay ===== */
+.money-rain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 9999;
+}
+
+.money-bill {
+  position: absolute;
+  top: -12vh;
+  animation: money-fall var(--dur) linear var(--delay) both;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.25));
+  user-select: none;
+}
+
+@keyframes money-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(var(--drift), 130vh, 0) rotate(var(--rotate));
+  }
+}
+
+/* ===== Calendar ===== */
+.calendar {
+  margin-top: 16px;
+}
+
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.calendarTitle {
+  font-weight: 700;
+}
+
+.calendarDow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
+  opacity: 0.8;
+  font-size: 12px;
+}
+
+.calendarDowCell {
+  text-align: center;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendarCell {
+  height: 36px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.calendarCell.isOut {
+  opacity: 0.35;
+}
+
+.calendarCell.isToday {
+  border-width: 2px;
+}
+
+.calendarCell.isSelected {
+  outline: 2px solid #333;
+}
+
+.calendarFooter {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* モーダル全体（中央寄せ） */
+.modal {
+  max-width: 560px;
+  width: 90vw;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;        /* 画面の 90% 高さまで */
+}
+
+/* フォーム部だけスクロールさせる */
+.modal-body {
+  padding: 16px 24px;
+  overflow-y: auto;
+  max-height: calc(90vh - 120px); 
+  /* 120px はヘッダー＋フッターの高さぶん（だいたいでOK） */
+}
+
+/* フッター（ボタン行）は固定で下に表示 */
+.modal-footer {
+  padding: 12px 24px 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid #eee;
+}
+
+:root { color-scheme: light; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  background: #f7f8fb;
+  color: #111;
+}
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+.card {
+  background: #fff;
+  border: 1px solid #e6e8ef;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+}
+.row { display: flex; gap: 12px; align-items: center; }
+.row-between { display:flex; justify-content: space-between; align-items:center; }
+h1 { margin: 0 0 12px; font-size: 40px; }
+input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d7dbe7;
+  border-radius: 10px;
+  font-size: 14px;
+}
+label { font-size: 13px; color: #333; display:block; margin: 12px 0 6px; }
+button {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #d7dbe7;
+  background: #fff;
+  cursor: pointer;
+}
+button.primary {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+.error {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #ffb4b4;
+  background: #fff2f2;
+  color: #8a1f1f;
+  white-space: pre-wrap;
+}
+.small { color:#666; font-size: 13px; }
+hr { border:0; border-top: 1px solid #eceef5; margin: 14px 0; }
+.task { display:flex; justify-content:space-between; gap: 10px; padding: 10px 0; }
+.badge { font-size:12px; padding: 3px 8px; border:1px solid #e6e8ef; border-radius: 999px; color:#444; }
+
+/* ===== MoneyRain Overlay ===== */
+.money-rain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 9999;
+}
+
+.money-bill {
+  position: absolute;
+  top: -12vh;
+  animation: money-fall var(--dur) linear var(--delay) both;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.25));
+  user-select: none;
+}
+
+@keyframes money-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(var(--drift), 130vh, 0) rotate(var(--rotate));
+  }
+}
+
+/* ===== Calendar ===== */
+.calendar {
+  margin-top: 16px;
+}
+
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.calendarTitle {
+  font-weight: 700;
+}
+
+.calendarDow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
+  opacity: 0.8;
+  font-size: 12px;
+}
+
+.calendarDowCell {
+  text-align: center;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendarCell {
+  height: 36px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.calendarCell.isOut {
+  opacity: 0.35;
+}
+
+.calendarCell.isToday {
+  border-width: 2px;
+}
+
+.calendarCell.isSelected {
+  outline: 2px solid #333;
+}
+
+.calendarFooter {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* モーダル全体（中央寄せ） */
+.modal {
+  max-width: 560px;
+  width: 90vw;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;        /* 画面の 90% 高さまで */
+}
+
+/* フォーム部だけスクロールさせる */
+.modal-body {
+  padding: 16px 24px;
+  overflow-y: auto;
+  max-height: calc(90vh - 120px); 
+  /* 120px はヘッダー＋フッターの高さぶん（だいたいでOK） */
+}
+
+/* フッター（ボタン行）は固定で下に表示 */
+.modal-footer {
+  padding: 12px 24px 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid #eee;
+}
+
+/* ==== lifeRabbit スプラッシュ ==== */
+.splash-root {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #fffdf7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Helvetica Neue", Arial, sans-serif;
+}
+
+.splash-bunny {
+  font-size: 64px;
+  animation: bunnyHop 0.7s ease-in-out infinite alternate;
+  transform-origin: bottom center;
+}
+
+.splash-title {
+  margin-top: 12px;
+  font-weight: 700;
+  font-size: 26px;
+}
+
+.splash-sub {
+  margin-top: 4px;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+/* ピョンピョンアニメーション */
+@keyframes bunnyHop {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-18px);
+  }
+}
+
+
+
+

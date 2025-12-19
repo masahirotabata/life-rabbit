@@ -1,0 +1,41 @@
+server:
+  port: 8080
+
+spring:
+  autoconfigure:
+    autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+    application:
+      name: backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/todo_money
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update   # 開発中は update、固めたら validate 推奨
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+app:
+  jwt:
+    secret: "CHANGE_ME_TO_A_LONG_RANDOM_SECRET_32CHARS_MIN"
+    issuer: "todo-money"
+    expiresMinutes: 60
+
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
