@@ -1,57 +1,52 @@
 // src/api.ts
+import axios, { AxiosInstance, AxiosResponse } from "axios";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'https://liferabbit-api.onrender.com';
+/**
+ * API クライアントの戻り値型
+ */
+export type ApiClient = {
+  get<T = unknown>(path: string): Promise<AxiosResponse<T>>;
+  post<T = unknown>(path: string, body?: unknown): Promise<AxiosResponse<T>>;
+  delete<T = unknown>(path: string): Promise<AxiosResponse<T>>;
+};
 
-export interface ApiResponse<T> {
-  data: T;
-}
+let client: AxiosInstance | null = null;
 
-async function request<T = unknown>(
-  path: string,
-  options: RequestInit = {}
-): Promise<ApiResponse<T>> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers ?? {})
-    },
-    ...options
-  });
+function getClient(): AxiosInstance {
+  if (!client) {
+    const baseURL =
+      import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`API error ${res.status}: ${text}`);
+    client = axios.create({
+      baseURL,
+    });
+
+    // 必要なら Authorization ヘッダなどもここで付与
+    client.interceptors.request.use((config) => {
+      const token = localStorage.getItem("todo-money:token");
+      if (token) {
+        config.headers = config.headers ?? {};
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
   }
-
-  const data = (await res.json()) as T;
-  return { data };
+  return client;
 }
 
-export const api = {
-  get:  <T = unknown>(path: string) =>
-    request<T>(path),
-
-  post: <T = unknown>(path: string, body?: unknown) =>
-    request<T>(path, {
-      method: 'POST',
-      body: body != null ? JSON.stringify(body) : undefined
-    }),
-};
-
-  // ★ 追加：DELETE メソッド
-  async delete<T = unknown>(path: string): Promise<ApiResponse<T>> {
-    const res = await client.delete<T>(path);
-    return { data: res.data };
-  },
-};
-
-// ⭐ ここを追加
-export function useApi() {
-  // コンポーネント側で `const api = useApi();` として使えるようにラッパを返す
-  return api;
+/**
+ * 各ページで使う API フック
+ *
+ * 例：
+ *   const api = useApi();
+ *   const res = await api.get<Summary>("/api/me/summary");
+ *   setS(res.data);
+ */
+export function useApi(): ApiClient {
+  const c = getClient();
+  return {
+    get: <T = unknown>(path: string) => c.get<T>(path),
+    post: <T = unknown>(path: string, body?: unknown) => c.post<T>(path, body),
+    delete: <T = unknown>(path: string) => c.delete<T>(path),
+  };
 }
-
-
-
-export default api;
