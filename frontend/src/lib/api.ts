@@ -14,6 +14,14 @@ export function clearToken() {
 }
 
 // =====================
+// API base URL
+// =====================
+// Vite の環境変数からベース URL を読む
+// Render の Static Site では VITE_API_BASE_URL を設定しておく想定
+// 例: https://liferabbit-api.onrender.com
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+
+// =====================
 // Request helper
 // =====================
 export type ApiError = { status: number; message: string };
@@ -21,7 +29,10 @@ export type ApiError = { status: number; message: string };
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = getToken();
 
-  const res = await fetch(path, {
+  // ベース URL とパスを結合
+  const url = `${API_BASE_URL}${path}`;
+
+  const res = await fetch(url, {
     ...init,
     headers: {
       "Content-Type": "application/json",
@@ -140,21 +151,30 @@ export async function listTags(): Promise<TagItem[]> {
   return fetchJson("/api/tags");
 }
 
-export async function createTag(name: string, color?: string): Promise<TagItem> {
+export async function createTag(
+  name: string,
+  color?: string
+): Promise<TagItem> {
   return fetchJson("/api/tags", {
     method: "POST",
     body: JSON.stringify({ name, color }),
   });
 }
 
-export async function setTaskTags(taskId: number, tagIds: number[]): Promise<any> {
+export async function setTaskTags(
+  taskId: number,
+  tagIds: number[]
+): Promise<any> {
   return fetchJson(`/api/tasks/${taskId}/tags`, {
     method: "POST",
     body: JSON.stringify({ tagIds }),
   });
 }
 
-export async function calendar(from: string, to: string): Promise<CalendarItem[]> {
+export async function calendar(
+  from: string,
+  to: string
+): Promise<CalendarItem[]> {
   return fetchJson(
     `/api/calendar?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
   );
@@ -174,7 +194,10 @@ export async function upsertSchedule(body: {
   });
 }
 
-export async function completeOccurrence(taskId: number, date: string): Promise<void> {
+export async function completeOccurrence(
+  taskId: number,
+  date: string
+): Promise<void> {
   await fetchJson("/api/complete", {
     method: "POST",
     body: JSON.stringify({ taskId, date }),
