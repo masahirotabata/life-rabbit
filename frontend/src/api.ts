@@ -39,10 +39,19 @@ export const api = {
     }),
 };
 
+  // ★ 追加：DELETE メソッド
+  async delete<T = unknown>(path: string): Promise<ApiResponse<T>> {
+    const res = await client.delete<T>(path);
+    return { data: res.data };
+  },
+};
+
 // ⭐ ここを追加
 export function useApi() {
   // コンポーネント側で `const api = useApi();` として使えるようにラッパを返す
   return api;
 }
+
+
 
 export default api;

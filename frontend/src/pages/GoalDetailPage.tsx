@@ -23,7 +23,7 @@ type Task = {
 };
 
 export default function GoalDetailPage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const goalId = Number(id);
   const api = useApi();
 
@@ -37,19 +37,22 @@ export default function GoalDetailPage() {
   });
 
   const loadGoal = async () => {
-    const res = await api.get(`/api/goals/${goalId}`);
+    if (!goalId) return;
+    const res = await api.get<Goal>(`/api/goals/${goalId}`);
     setGoal(res.data);
   };
 
   const loadTasks = async () => {
+    if (!goalId) return;
     // GoalController の GET /api/goals/{id}/tasks を想定
-    const res = await api.get(`/api/goals/${goalId}/tasks`);
-    setTasks(res.data as Task[]);
+    const res = await api.get<Task[]>(`/api/goals/${goalId}/tasks`);
+    setTasks(res.data);
   };
 
   useEffect(() => {
     loadGoal();
     loadTasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [goalId]);
 
   const addTask = async () => {
@@ -67,13 +70,13 @@ export default function GoalDetailPage() {
 
   const canAchieve = useMemo(
     () =>
-      goal &&
+      !!goal &&
       goal.taskCount > 0 &&
       goal.completedTaskCount === goal.taskCount,
     [goal]
   );
 
-  // ★ 追加: タスク削除
+  // ★ タスク削除
   const deleteTask = async (taskId: number) => {
     if (!window.confirm("このタスクを削除しますか？")) return;
     // GoalController 側に DELETE /api/goals/{goalId}/tasks/{taskId} を実装して呼び出す想定
