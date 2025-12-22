@@ -37,9 +37,17 @@ export default function LoginPage() {
 
   return (
     <div className="container">
-      <div className="card" style={{ maxWidth: 720, margin: "0 auto" }}>
-        <div className="row-between">
-          <h2 style={{ margin: 0 }}>{mode === "login" ? "Login" : "Create account"}</h2>
+      <div
+        className="card"
+        style={{
+          maxWidth: 420,
+          margin: "40px auto",
+        }}
+      >
+        <div className="row-between" style={{ marginBottom: 16 }}>
+          <h2 style={{ margin: 0 }}>
+            {mode === "login" ? "Login" : "Create account"}
+          </h2>
           <button
             onClick={() => setMode(mode === "login" ? "register" : "login")}
             disabled={busy}
@@ -48,22 +56,62 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <label>Email</label>
-        <input value={email} onChange={(e) => setEmail(e.target.value)} />
+        {/* フォーム本体 */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontSize: 14,
+                marginBottom: 4,
+              }}
+            >
+              Email
+            </label>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={{
+                width: "100%",
+                boxSizing: "border-box",
+                padding: "8px 10px",
+              }}
+            />
+          </div>
 
-        <label>Password</label>
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontSize: 14,
+                marginBottom: 4,
+              }}
+            >
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{
+                width: "100%",
+                boxSizing: "border-box",
+                padding: "8px 10px",
+              }}
+            />
+          </div>
 
-        <div style={{ marginTop: 14 }}>
-          <button className="primary" onClick={onSubmit} disabled={busy}>
-            {busy ? "..." : mode === "login" ? "Login" : "Register & Login"}
-          </button>
-        </div>
+          <div style={{ marginTop: 8 }}>
+            <button className="primary" onClick={onSubmit} disabled={busy}>
+              {busy ? "..." : mode === "login" ? "Login" : "Register & Login"}
+            </button>
+          </div>
 
-        {error && <div className="error">{error}</div>}
+          {error && <div className="error">{error}</div>}
 
-        <div className="small" style={{ marginTop: 10 }}>
-          ※ 409 は「すでに登録済み」です（エラーじゃなく案内）
+          <div className="small" style={{ marginTop: 4 }}>
+            ※ 409 は「すでに登録済み」です（エラーじゃなく案内）
+          </div>
         </div>
       </div>
     </div>
