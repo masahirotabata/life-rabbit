@@ -29,7 +29,7 @@ public class SecurityConfig {
         return new JwtAuthFilter(jwtService, userRepo);
     }
 
-    // ==== CORS はここだけで設定 ====
+    // ==== CORS 設定はここだけ ====
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
@@ -44,10 +44,10 @@ public class SecurityConfig {
         // 許可する HTTP メソッド
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
-        // 全てのヘッダを許可（デバッグしやすくする）
+        // ヘッダは一旦すべて許可（デバッグしやすくする）
         config.setAllowedHeaders(List.of("*"));
 
-        // Cookie を送っていないので false で OK
+        // Cookie は使っていないので false で OK
         config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -56,8 +56,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                            JwtAuthFilter jwtAuthFilter) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   JwtAuthFilter jwtAuthFilter) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             // ↑の corsConfigurationSource() を使う
