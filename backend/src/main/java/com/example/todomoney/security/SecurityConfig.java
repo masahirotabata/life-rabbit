@@ -1,11 +1,15 @@
 package com.example.todomoney.security;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 import com.example.todomoney.repo.UserRepository;
 =======
 import java.util.List;
 
 >>>>>>> af109e6 (cors修正)
+=======
+import com.example.todomoney.repo.UserRepository;
+>>>>>>> 872222e (cors修正)
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,15 +22,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 // ★ CORS 用の import
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+<<<<<<< HEAD
+// ★ CORS 用の import
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+=======
+>>>>>>> 872222e (cors修正)
 import java.util.List;
 
 @Configuration
@@ -38,6 +47,7 @@ public class SecurityConfig {
     return new JwtAuthFilter(jwtService, userRepo);
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   // ★ CORS 設定（フロント & API オリジンを許可）
   @Bean
@@ -64,15 +74,19 @@ public class SecurityConfig {
 =======
   // ★ CORS 設定（フロント & ローカル開発用オリジンを許可）
 >>>>>>> af109e6 (cors修正)
+=======
+  // ★ CORS 設定（フロント & API オリジンを許可）
+>>>>>>> 872222e (cors修正)
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration c = new CorsConfiguration();
 
+    // フロント & API オリジン
     c.setAllowedOrigins(List.of(
-        "https://liferabbit-todo-web.onrender.com", // 本番フロント
-        "http://localhost:5173",
-        "http://127.0.0.1:5173"
-        // "https://liferabbit-api.onrender.com" は API 自身なので本来は不要
+      "https://liferabbit-todo-web.onrender.com", // フロント
+      "https://liferabbit-api.onrender.com",      // API（入れておいてもOK）
+      "http://localhost:5173",
+      "http://127.0.0.1:5173"
     ));
 
     c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
@@ -85,13 +99,12 @@ public class SecurityConfig {
   }
 
   @Bean
-  SecurityFilterChain securityFilterChain(
-      HttpSecurity http,
-      JwtAuthFilter jwtAuthFilter,
-      CorsConfigurationSource corsConfigurationSource) throws Exception {
-
+  SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
     http
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 872222e (cors修正)
       .csrf(csrf -> csrf.disable())
       // 上で定義した corsConfigurationSource() が自動で使われる
       .cors(cors -> {})
@@ -119,6 +132,7 @@ public class SecurityConfig {
       .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
       .httpBasic(b -> b.disable())
       .formLogin(f -> f.disable());
+<<<<<<< HEAD
 =======
         .csrf(csrf -> csrf.disable())
         // ★ ここで上の corsConfigurationSource を使う
@@ -141,6 +155,8 @@ public class SecurityConfig {
         .httpBasic(b -> b.disable())
         .formLogin(f -> f.disable());
 >>>>>>> af109e6 (cors修正)
+=======
+>>>>>>> 872222e (cors修正)
 
     return http.build();
   }
