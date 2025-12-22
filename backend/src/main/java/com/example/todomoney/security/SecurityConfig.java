@@ -29,25 +29,25 @@ public class SecurityConfig {
         return new JwtAuthFilter(jwtService, userRepo);
     }
 
-    // ==== CORS 設定はここだけ ====
+    // CORS 設定はここだけ
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
         // 許可するオリジン
         config.setAllowedOriginPatterns(List.of(
-            "https://liferabbit-todo-web.onrender.com", // 本番フロント
+            "https://liferabbit-todo-web.onrender.com",
             "http://localhost:5173",
             "http://127.0.0.1:5173"
         ));
 
+        // 全ヘッダ許可
+        config.setAllowedHeaders(List.of("*"));
+
         // 許可する HTTP メソッド
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
-        // ヘッダは一旦すべて許可（デバッグしやすくする）
-        config.setAllowedHeaders(List.of("*"));
-
-        // Cookie は使っていないので false で OK
+        // Cookie を使っていないので false
         config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -60,7 +60,6 @@ public class SecurityConfig {
                                                    JwtAuthFilter jwtAuthFilter) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-            // ↑の corsConfigurationSource() を使う
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(e -> e.authenticationEntryPoint(
