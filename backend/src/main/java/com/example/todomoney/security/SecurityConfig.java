@@ -29,16 +29,16 @@ public class SecurityConfig {
     return new JwtAuthFilter(jwtService, userRepo);
   }
 
-  // CORS 設定
+  // ★ CORS 設定（フロント & ローカル開発用オリジンを許可）
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration c = new CorsConfiguration();
 
     c.setAllowedOrigins(List.of(
-        "https://liferabbit-todo-web.onrender.com",  // フロント
-        "https://liferabbit-api.onrender.com",        // API
+        "https://liferabbit-todo-web.onrender.com", // 本番フロント
         "http://localhost:5173",
         "http://127.0.0.1:5173"
+        // "https://liferabbit-api.onrender.com" は API 自身なので本来は不要
     ));
 
     c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
@@ -57,20 +57,26 @@ public class SecurityConfig {
       CorsConfigurationSource corsConfigurationSource) throws Exception {
 
     http
-      .csrf(csrf -> csrf.disable())
-      .cors(cors -> cors.configurationSource(corsConfigurationSource))
-      .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-      .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-      .authorizeHttpRequests(auth -> auth
-          .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-          .requestMatchers("/api/auth/**").permitAll()
-          .requestMatchers("/actuator/health").permitAll()
-          .requestMatchers("/error").permitAll()
-          .anyRequest().authenticated()
-      )
-      .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-      .httpBasic(b -> b.disable())
-      .formLogin(f -> f.disable());
+        .csrf(csrf -> csrf.disable())
+        // ★ ここで上の corsConfigurationSource を使う
+        .cors(cors -> cors.configurationSource(corsConfigurationSource))
+        .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .exceptionHandling(e -> e.authenticationEntryPoint(
+            new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+        .authorizeHttpRequests(auth -> auth
+            // Preflight 対策
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+            // register/login は認証不要
+            .requestMatchers("/api/auth/**").permitAll()
+            // health チェック
+            .requestMatchers("/actuator/health").permitAll()
+            // エラーページ
+            .requestMatchers("/error").permitAll()
+            // それ以外は JWT 必須
+            .anyRequest().authenticated())
+        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+        .httpBasic(b -> b.disable())
+        .formLogin(f -> f.disable());
 
     return http.build();
   }
