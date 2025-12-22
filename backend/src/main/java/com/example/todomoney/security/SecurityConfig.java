@@ -24,66 +24,68 @@ import com.example.todomoney.repo.UserRepository;
 @EnableWebSecurity
 public class SecurityConfig {
 
-  @Bean
-  public JwtAuthFilter jwtAuthFilter(JwtService jwtService, UserRepository userRepo) {
-    return new JwtAuthFilter(jwtService, userRepo);
-  }
+    @Bean
+    public JwtAuthFilter jwtAuthFilter(JwtService jwtService, UserRepository userRepo) {
+        return new JwtAuthFilter(jwtService, userRepo);
+    }
 
-  // ★ CORS 設定はここだけ
-  @Bean
-  public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration config = new CorsConfiguration();
+    // ==== CORS はここだけで設定 ====
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
 
-    // 許可するオリジン
-    config.setAllowedOrigins(List.of(
-        "https://liferabbit-todo-web.onrender.com", // 本番フロント
-        "http://localhost:5173",
-        "http://127.0.0.1:5173"
-    ));
+        // 許可するオリジン
+        config.setAllowedOriginPatterns(List.of(
+            "https://liferabbit-todo-web.onrender.com", // 本番フロント
+            "http://localhost:5173",
+            "http://127.0.0.1:5173"
+        ));
 
-    // 許可する HTTP メソッド
-    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        // 許可する HTTP メソッド
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
-    // 許可するヘッダ
-    config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
+        // 全てのヘッダを許可（デバッグしやすくする）
+        config.setAllowedHeaders(List.of("*"));
 
-    // Cookie を使わないので false で OK（Authorization ヘッダはこれで問題なく使えます）
-    config.setAllowCredentials(false);
+        // Cookie を送っていないので false で OK
+        config.setAllowCredentials(false);
 
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", config);
-    return source;
-  }
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
 
-  @Bean
-  SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
-    http
-      .csrf(csrf -> csrf.disable())
-      // ★ 上の corsConfigurationSource を使う
-      .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-      .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-      .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-      .authorizeHttpRequests(auth -> auth
-        // Preflight
-        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-        // register/login
-        .requestMatchers("/api/auth/**").permitAll()
-        // health
-        .requestMatchers("/actuator/health").permitAll()
-        // error ページ
-        .requestMatchers("/error").permitAll()
-        // その他は JWT 必須
-        .anyRequest().authenticated()
-      )
-      .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-      .httpBasic(b -> b.disable())
-      .formLogin(f -> f.disable());
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                            JwtAuthFilter jwtAuthFilter) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            // ↑の corsConfigurationSource() を使う
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(e -> e.authenticationEntryPoint(
+                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+            .authorizeHttpRequests(auth -> auth
+                // Preflight(OPTIONS) は全部許可
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                // register / login は認証不要
+                .requestMatchers("/api/auth/**").permitAll()
+                // health チェック
+                .requestMatchers("/actuator/health").permitAll()
+                // エラーページ
+                .requestMatchers("/error").permitAll()
+                // それ以外は JWT 必須
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .httpBasic(b -> b.disable())
+            .formLogin(f -> f.disable());
 
-    return http.build();
-  }
+        return http.build();
+    }
 
-  @Bean
-  public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
-  }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 }
