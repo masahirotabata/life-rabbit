@@ -65,14 +65,18 @@ public class SecurityConfig {
             .exceptionHandling(e -> e.authenticationEntryPoint(
                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
             .authorizeHttpRequests(auth -> auth
-                // Preflight(OPTIONS) は全部許可
+                // Preflight(OPTIONS) は全部許可（CORSで必須）
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                // register / login は認証不要
+
+                // ★ 認証不要（ログイン/登録）
                 .requestMatchers("/api/auth/**").permitAll()
-                // health チェック
-                .requestMatchers("/actuator/health").permitAll()
+
+                // ★ ヘルスチェック等（必要なら全部許可）
+                .requestMatchers("/actuator/**").permitAll()
+
                 // エラーページ
                 .requestMatchers("/error").permitAll()
+
                 // それ以外は JWT 必須
                 .anyRequest().authenticated()
             )
