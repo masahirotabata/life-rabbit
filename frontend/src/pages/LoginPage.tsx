@@ -1,6 +1,74 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { login, register, setToken } from "../lib/api";
+import { setToken } from "../lib/api";
+
+type ApiError = Error & { status?: number; body?: any };
+
+const API_BASE =
+  (import.meta as any)?.env?.VITE_API_BASE ??
+  (import.meta as any)?.env?.VITE_API_URL ??
+  "https://todo-money-api.onrender.com";
+
+function looksLikeHtml(s: string) {
+  const t = s.trim().toLowerCase();
+  return t.startsWith("<!doctype") || t.startsWith("<html") || t.includes("<head");
+}
+
+async function fetchJson<T = any>(path: string, options: RequestInit): Promise<T> {
+  const url = path.startsWith("http") ? path : `${API_BASE}${path}`;
+
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+
+  const ct = res.headers.get("content-type") || "";
+  const body: any = ct.includes("application/json")
+    ? await res.json().catch(() => null)
+    : await res.text();
+
+  if (!res.ok) {
+    const err: ApiError = new Error();
+
+    err.status = res.status;
+    err.body = body;
+
+    // メッセージ組み立て
+    if (typeof body === "object" && body?.message) {
+      err.message = body.message;
+    } else if (typeof body === "string" && body) {
+      err.message = looksLikeHtml(body)
+        ? `APIがHTMLを返しました。API_BASE_URLが違う可能性があります（現在: ${API_BASE}）`
+        : body;
+    } else {
+      err.message = `HTTP ${res.status}`;
+    }
+
+    throw err;
+  }
+
+  return body as T;
+}
+
+async function apiRegister(email: string, password: string) {
+  // 例: POST /api/auth/register
+  return fetchJson("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+async function apiLogin(email: string, password: string) {
+  // 例: POST /api/auth/login -> { token: "..." }
+  return fetchJson<{ token: string }>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
 
 export default function LoginPage() {
   const nav = useNavigate();
@@ -18,9 +86,9 @@ export default function LoginPage() {
     setBusy(true);
     try {
       if (mode === "register") {
-        await register(email, password);
+        await apiRegister(email, password);
       }
-      const r = await login(email, password);
+      const r = await apiLogin(email, password);
       setToken(r.token);
       nav(from, { replace: true });
     } catch (e: any) {
@@ -111,6 +179,8 @@ export default function LoginPage() {
 
           <div className="small" style={{ marginTop: 4 }}>
             ※ 409 は「すでに登録済み」です（エラーじゃなく案内）
+            <br />
+            ※ 現在のAPI: <code>{API_BASE}</code>
           </div>
         </div>
       </div>
