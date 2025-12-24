@@ -139,40 +139,52 @@ export default function GoalsPage() {
   }, []);
   // ====== ★ 追加ここまで ======
 
-  // ====== ★ 追加：スマホでカレンダーを1画面に収める自動スケール ======
-  const calFitRef = useRef<HTMLDivElement | null>(null);
+  // ====== ★ 修正版：スマホでカレンダーを1画面に収める自動スケール ======
+  const calOuterRef = useRef<HTMLDivElement | null>(null); // top を取る
+  const calContentRef = useRef<HTMLDivElement | null>(null); // 自然高さを測る
   const [calScale, setCalScale] = useState(1);
 
   useEffect(() => {
-    // スマホのカレンダータブだけ適用
     if (!isSmall || activeTab !== "calendar") {
       setCalScale(1);
       return;
     }
 
-    const el = calFitRef.current;
-    if (!el) return;
+    const outer = calOuterRef.current;
+    const content = calContentRef.current;
+    if (!outer || !content) return;
 
     const recompute = () => {
-      // レイアウト確定後に計測（イベントが多い・画像読み込みなどでもズレにくい）
       requestAnimationFrame(() => {
-        const rect = el.getBoundingClientRect();
-        const available = window.innerHeight - rect.top - 12; // 下余白 12px
-        const natural = el.scrollHeight; // スケール前の本来高さ
+        const outerRect = outer.getBoundingClientRect();
+        const available = window.innerHeight - outerRect.top - 12; // 下余白
+        const natural = content.scrollHeight; // transform の影響を受けない自然高さ
+
         if (!natural || natural <= 0) return;
 
         const next = Math.min(1, available / natural);
-        // 小さくしすぎるとタップしづらいので下限を設ける
-        setCalScale(Math.max(0.78, next));
+
+        // 360x740 だと 0.78 では足りないことが多いので下限を下げる
+        setCalScale(Math.max(0.55, next));
       });
     };
 
     recompute();
     window.addEventListener("resize", recompute);
 
-    return () => window.removeEventListener("resize", recompute);
+    const ro =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => recompute())
+        : null;
+
+    ro?.observe(content);
+
+    return () => {
+      window.removeEventListener("resize", recompute);
+      ro?.disconnect();
+    };
   }, [isSmall, activeTab, taskListOpen, schedules.length]);
-  // ====== ★ 追加ここまで ======
+  // ====== ★ 修正版ここまで ======
 
   // ★ 初回マウント時に lifeRabbit スプラッシュを少しだけ表示
   useEffect(() => {
@@ -271,7 +283,6 @@ export default function GoalsPage() {
       await completeTask(taskId);
       await refreshGoals();
       await loadTasks(goalId);
-      // ★ ここで「Goalタスクの履歴」にも足すのは次ステップでOK
     } catch (e: any) {
       setError(e?.message ?? "完了処理に失敗しました");
     }
@@ -381,7 +392,6 @@ export default function GoalsPage() {
   ) {
     let scheduleTitle = "";
 
-    // completedDates を更新
     setSchedules((prev) =>
       prev.map((ev) => {
         if (ev.id !== scheduleId) return ev;
@@ -389,7 +399,6 @@ export default function GoalsPage() {
         const prevDates = ev.completedDates ?? [];
         let nextDates: string[];
         if (done) {
-          // すでに含まれていればそのまま
           if (prevDates.includes(dateStr)) return ev;
           nextDates = [...prevDates, dateStr];
         } else {
@@ -399,12 +408,8 @@ export default function GoalsPage() {
       })
     );
 
-    // ★ 日々のタスク完了でも「お金の雨」を降らせる
-    if (done) {
-      setRainSeed(Date.now());
-    }
+    if (done) setRainSeed(Date.now());
 
-    // 履歴も更新
     if (done) {
       const item: ScheduleHistoryItem = {
         id: uid(),
@@ -506,7 +511,10 @@ export default function GoalsPage() {
             <h2 style={{ marginTop: 0 }}>新規リスト</h2>
 
             <label>Title</label>
-            <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
+            <input
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+            />
 
             <label>Annual Income（JPY換算でもOK）</label>
             <input
@@ -675,7 +683,13 @@ export default function GoalsPage() {
                     {dragTaskList.length === 0 ? (
                       <div className="small muted">未完了タスクはありません</div>
                     ) : (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 6,
+                        }}
+                      >
                         {dragTaskList.map(({ goalId, goalTitle, task }) => (
                           <div
                             key={`${goalId}-${task.id}`}
@@ -723,23 +737,24 @@ export default function GoalsPage() {
                   </div>
                 )}
 
-                {/* カレンダー本体：スマホは“1画面に収める”ために自動スケール */}
-                <div style={{ overflow: "hidden" }}>
+                {/* ✅ 修正版：カレンダー本体（outerRef + contentRef） */}
+                <div ref={calOuterRef} style={{ overflow: "hidden" }}>
                   <div
-                    ref={calFitRef}
                     style={{
                       transform: `scale(${calScale})`,
                       transformOrigin: "top left",
-                      // scaleすると横幅も縮むので、幅を逆補正してクリップを防ぐ
-                      width: calScale === 1 ? "100%" : `calc(100% / ${calScale})`,
+                      width:
+                        calScale === 1 ? "100%" : `calc(100% / ${calScale})`,
                     }}
                   >
-                    <Calender
-                      events={schedules}
-                      onDayClick={(d) => openNewSchedule(d, undefined, toYMD(d))}
-                      onDropTask={handleDropTask}
-                      onEventClick={handleEventClick}
-                    />
+                    <div ref={calContentRef}>
+                      <Calender
+                        events={schedules}
+                        onDayClick={(d) => openNewSchedule(d, undefined, toYMD(d))}
+                        onDropTask={handleDropTask}
+                        onEventClick={handleEventClick}
+                      />
+                    </div>
                   </div>
                 </div>
               </>
@@ -777,7 +792,13 @@ export default function GoalsPage() {
                     {dragTaskList.length === 0 ? (
                       <div className="small muted">未完了タスクはありません</div>
                     ) : (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 6,
+                        }}
+                      >
                         {dragTaskList.map(({ goalId, goalTitle, task }) => (
                           <div
                             key={`${goalId}-${task.id}`}
