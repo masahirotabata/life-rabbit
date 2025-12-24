@@ -1,5 +1,5 @@
 // src/pages/Calender.tsx
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 export type DragTaskPayload = {
   kind: "task";
@@ -8,27 +8,19 @@ export type DragTaskPayload = {
   title: string;
 };
 
-// ★ 型を拡張
 export type ScheduleEvent = {
   id: string;
   title: string;
   memo?: string;
   startDate: string; // yyyy-mm-dd
-  endDate: string;   // yyyy-mm-dd
+  endDate: string; // yyyy-mm-dd
   weekdays: boolean[]; // [Sun..Sat] length=7
   taskRef?: { goalId: number; taskId: number };
 
-  // 時刻（任意）
   startTime?: string; // "HH:MM"
-  endTime?: string;   // "HH:MM"
-
-  // 単発かどうか
+  endTime?: string; // "HH:MM"
   oneShot?: boolean;
-
-  // タグ（有料機能用）
   tags?: string[];
-
-  // ★ 追加: 「このスケジュールが完了した日」の一覧
   completedDates?: string[]; // ["2025-12-15", ...]
 };
 
@@ -76,16 +68,12 @@ function buildMonthGrid(base: Date) {
   return cells;
 }
 
-// ★ その日付にイベントがあるか判定
 function hasEventOnDate(ev: ScheduleEvent, date: Date): boolean {
   const key = toYMD(date);
   const weekdays = ev.weekdays ?? [];
-
   const isOneShot = ev.oneShot || weekdays.length === 0;
 
-  if (isOneShot) {
-    return key === ev.startDate;
-  }
+  if (isOneShot) return key === ev.startDate;
 
   if (!sameOrAfter(key, ev.startDate)) return false;
   if (!sameOrBefore(key, ev.endDate)) return false;
@@ -94,13 +82,9 @@ function hasEventOnDate(ev: ScheduleEvent, date: Date): boolean {
   return !!weekdays[dow];
 }
 
-// ★ その日のイベント一覧
 function getEventsForDate(events: ScheduleEvent[], date: Date): ScheduleEvent[] {
   return events.filter((ev) => hasEventOnDate(ev, date));
 }
-
-// 各日セルの最小幅（これを下回ると横スクロール）
-const CELL_MIN_WIDTH = 120;
 
 export default function Calender(props: Props) {
   const { events, onDayClick, onDropTask, onEventClick } = props;
@@ -121,6 +105,37 @@ export default function Calender(props: Props) {
     }
     return map;
   }, [cells, events]);
+
+  // ===== Responsive sizing (ここが肝) =====
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const [wrapW, setWrapW] = useState(0);
+
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+
+    const ro = new ResizeObserver(() => {
+      setWrapW(el.getBoundingClientRect().width);
+    });
+    ro.observe(el);
+
+    // 初回も反映
+    setWrapW(el.getBoundingClientRect().width);
+
+    return () => ro.disconnect();
+  }, []);
+
+  // 7列に収めるセル幅を計算（スマホでも横スクロール不要）
+  const GAP = wrapW && wrapW < 520 ? 4 : 6;
+  const cellW = useMemo(() => {
+    if (!wrapW) return 0;
+    const inner = Math.max(0, wrapW - GAP * 6); // 7列の隙間が6個
+    const w = Math.floor(inner / 7);
+    // 小さすぎると押せないので下限、PCは大きくなりすぎないよう上限
+    return Math.max(44, Math.min(110, w));
+  }, [wrapW, GAP]);
+
+  const isCompact = cellW > 0 && cellW < 70;
 
   const weekNames = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -156,22 +171,27 @@ export default function Calender(props: Props) {
         </button>
       </div>
 
-      {/* カレンダー本体：横スクロール可能 */}
-      <div style={{ overflowX: "auto", paddingBottom: 4 }}>
+      {/* カレンダー本体（横スクロール前提をやめる） */}
+      <div ref={wrapperRef} style={{ width: "100%" }}>
         {/* weekday header */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: `repeat(7, minmax(${CELL_MIN_WIDTH}px, 1fr))`,
-            gap: 6,
-            marginBottom: 6,
-            minWidth: CELL_MIN_WIDTH * 7,
+            gridTemplateColumns:
+              cellW > 0 ? `repeat(7, ${cellW}px)` : "repeat(7, 1fr)",
+            gap: GAP,
+            marginBottom: GAP,
+            justifyContent: "space-between",
           }}
         >
           {weekNames.map((w) => (
             <div
               key={w}
-              style={{ fontSize: 12, opacity: 0.7, textAlign: "center" }}
+              style={{
+                fontSize: isCompact ? 10 : 12,
+                opacity: 0.7,
+                textAlign: "center",
+              }}
             >
               {w}
             </div>
@@ -182,9 +202,10 @@ export default function Calender(props: Props) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: `repeat(7, minmax(${CELL_MIN_WIDTH}px, 1fr))`,
-            gap: 6,
-            minWidth: CELL_MIN_WIDTH * 7,
+            gridTemplateColumns:
+              cellW > 0 ? `repeat(7, ${cellW}px)` : "repeat(7, 1fr)",
+            gap: GAP,
+            justifyContent: "space-between",
           }}
         >
           {cells.map((d) => {
@@ -214,8 +235,8 @@ export default function Calender(props: Props) {
                 style={{
                   border: "1px solid rgba(0,0,0,0.08)",
                   borderRadius: 10,
-                  padding: 8,
-                  minHeight: 80,
+                  padding: isCompact ? 5 : 8,
+                  minHeight: isCompact ? 64 : 80,
                   cursor: "pointer",
                   background: inMonth ? "white" : "rgba(0,0,0,0.03)",
                   boxSizing: "border-box",
@@ -234,7 +255,7 @@ export default function Calender(props: Props) {
                 >
                   <div
                     style={{
-                      fontSize: 12,
+                      fontSize: isCompact ? 10 : 12,
                       fontWeight: 700,
                       opacity: inMonth ? 1 : 0.45,
                     }}
@@ -246,15 +267,14 @@ export default function Calender(props: Props) {
                 {/* イベント一覧 */}
                 <div
                   style={{
-                    marginTop: 6,
+                    marginTop: isCompact ? 4 : 6,
                     display: "flex",
                     flexDirection: "column",
-                    gap: 4,
+                    gap: isCompact ? 3 : 4,
                   }}
                 >
-                  {list.slice(0, 3).map((ev) => {
-                    const completed =
-                      ev.completedDates?.includes(key) ?? false;
+                  {list.slice(0, isCompact ? 2 : 3).map((ev) => {
+                    const completed = ev.completedDates?.includes(key) ?? false;
 
                     const timeLabel = ev.startTime
                       ? ev.endTime
@@ -270,8 +290,8 @@ export default function Calender(props: Props) {
                           onEventClick?.(ev, key);
                         }}
                         style={{
-                          fontSize: 11,
-                          padding: "4px 6px",
+                          fontSize: isCompact ? 9 : 11,
+                          padding: isCompact ? "3px 4px" : "4px 6px",
                           borderRadius: 8,
                           background: completed
                             ? "rgba(0,0,0,0.15)"
@@ -283,11 +303,12 @@ export default function Calender(props: Props) {
                           flexDirection: "column",
                           alignItems: "flex-start",
                           gap: 1,
+                          overflow: "hidden",
                         }}
                         title={ev.memo ? `${ev.title}\n${ev.memo}` : ev.title}
                       >
                         {/* 時刻 */}
-                        {timeLabel && (
+                        {timeLabel && !isCompact && (
                           <div
                             style={{
                               fontSize: 10,
@@ -298,11 +319,11 @@ export default function Calender(props: Props) {
                             {timeLabel}
                           </div>
                         )}
-                        {/* タイトル（＋連携アイコン） */}
+                        {/* タイトル */}
                         <div
                           style={{
                             fontWeight: 600,
-                            lineHeight: 1.2,
+                            lineHeight: 1.15,
                             wordBreak: "break-word",
                           }}
                         >
@@ -312,9 +333,10 @@ export default function Calender(props: Props) {
                       </div>
                     );
                   })}
-                  {list.length > 3 && (
-                    <div style={{ fontSize: 11, opacity: 0.6 }}>
-                      +{list.length - 3} more
+
+                  {list.length > (isCompact ? 2 : 3) && (
+                    <div style={{ fontSize: isCompact ? 9 : 11, opacity: 0.6 }}>
+                      +{list.length - (isCompact ? 2 : 3)} more
                     </div>
                   )}
                 </div>
