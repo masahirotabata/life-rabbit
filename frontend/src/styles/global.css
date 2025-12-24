@@ -387,6 +387,50 @@ hr { border:0; border-top: 1px solid #eceef5; margin: 14px 0; }
   }
 }
 
+/* ===== はみ出し対策（最重要） ===== */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* 画面全体の横はみ出し防止（保険） */
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* ===== レイアウト ===== */
+.container {
+  width: 100%;
+  max-width: 1100px;   /* 好みで 1000〜1200 */
+  margin: 0 auto;
+  padding: 24px 16px;  /* 左右余白が効いて飛び出しにくくなる */
+}
+
+/* カードが親幅を超えないように */
+.card {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;    /* 子要素が飛び出すのを止める */
+}
+
+/* 入力系がカード幅を超えないように */
+.card input,
+.card textarea,
+.card select {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* ヘッダー等の横並びが狭い画面で折り返す */
+.row-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+
 
 
 

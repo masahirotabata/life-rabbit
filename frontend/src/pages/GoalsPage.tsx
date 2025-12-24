@@ -397,7 +397,7 @@ export default function GoalsPage() {
 
       {/* ヘッダー */}
       <div className="row-between">
-        <h1>Goals</h1>
+        <h1>Liferabbit</h1>
         <button onClick={logout}>Logout</button>
       </div>
 
