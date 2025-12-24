@@ -539,6 +539,106 @@ input, button, textarea, select {
   .calendar-cell { padding: 8px; min-height: 64px; }
 }
 
+/* ===== カレンダー 2カラム + 開閉 ===== */
+.cal-layout{
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.cal-main{ min-width: 0; } /* これ超重要：横潰れ防止 */
+.cal-sidebar{ min-width: 0; }
+
+.pool-task{
+  padding: 10px 8px;
+  border-bottom: 1px solid #eceef5;
+  cursor: grab;
+}
+.pool-task:active{ cursor: grabbing; }
+
+.cal-toolbar{
+  display: none; /* PCでは非表示 */
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 10px 0 8px;
+}
+.cal-open{ width: auto; }
+.cal-close{ display: none; }
+
+.cal-overlay{
+  display: none;
+}
+
+/* カレンダー自体は7列を死守（スマホでも潰れない設定） */
+.calendar-wrap{ overflow-x: auto; padding-bottom: 4px; }
+.calendar-grid{
+  display: grid;
+  grid-template-columns: repeat(7, minmax(38px, 1fr));
+  gap: 8px;
+}
+.calendar-cell{
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 8px;
+  min-height: 64px;
+}
+.calendar-dots{
+  display:flex;
+  gap: 4px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+/* ===== タブレット以下：縦積み & サイドは基本閉じる ===== */
+@media (max-width: 768px){
+  .cal-layout{
+    grid-template-columns: 1fr;
+  }
+
+  /* サイドをモーダル風に */
+  .cal-sidebar{
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    width: min(340px, 86vw);
+    background: #f7f8fb;
+    padding: 14px;
+    overflow: auto;
+    z-index: 2000;
+    transform: translateX(-105%);
+    transition: transform .18s ease;
+  }
+  .cal-sidebar.is-open{ transform: translateX(0); }
+
+  .cal-overlay{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.25);
+    z-index: 1999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease;
+    display: block;
+  }
+  .cal-overlay.is-open{
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .cal-toolbar{
+    display: flex;
+  }
+  .cal-close{ display: inline-block; }
+}
+
+/* さらに小さい端末 */
+@media (max-width: 420px){
+  .calendar-grid{ grid-template-columns: repeat(7, minmax(32px, 1fr)); gap: 6px; }
+  .calendar-cell{ padding: 6px; min-height: 56px; }
+}
+
+
 
 
 
