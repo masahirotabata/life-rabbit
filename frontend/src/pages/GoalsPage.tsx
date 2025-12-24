@@ -26,7 +26,7 @@ const HISTORY_KEY = "todo-money:scheduleHistory:v1";
 type ScheduleHistoryItem = {
   id: string;
   scheduleId: string;
-  date: string;   // "YYYY-MM-DD"
+  date: string; // "YYYY-MM-DD"
   doneAt: string; // ISO
   title: string;
 };
@@ -82,7 +82,9 @@ export default function GoalsPage() {
   const [showSplash, setShowSplash] = useState(true);
 
   const [goals, setGoals] = useState<GoalListItem[]>([]);
-  const [tasksByGoal, setTasksByGoal] = useState<Record<number, TaskItem[]>>({});
+  const [tasksByGoal, setTasksByGoal] = useState<Record<number, TaskItem[]>>(
+    {}
+  );
   const [error, setError] = useState<string | null>(null);
 
   const [newTitle, setNewTitle] = useState("副業で月5万");
@@ -115,6 +117,27 @@ export default function GoalsPage() {
 
   // ★ タブ
   const [activeTab, setActiveTab] = useState<TabId>("calendar");
+
+  // ====== ★ ここから追加：カレンダー左タスクリスト開閉 ======
+  const [taskListOpen, setTaskListOpen] = useState(true);
+  const [isSmall, setIsSmall] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const mq = window.matchMedia("(max-width: 768px)");
+    const apply = () => {
+      const small = mq.matches;
+      setIsSmall(small);
+      // スマホは閉じる / PCは開く
+      setTaskListOpen(!small);
+    };
+
+    apply();
+    mq.addEventListener?.("change", apply);
+    return () => mq.removeEventListener?.("change", apply);
+  }, []);
+  // ====== ★ 追加ここまで ======
 
   // ★ 初回マウント時に lifeRabbit スプラッシュを少しだけ表示
   useEffect(() => {
@@ -358,9 +381,7 @@ export default function GoalsPage() {
       setHistory((prev) => [...prev, item]);
     } else {
       setHistory((prev) =>
-        prev.filter(
-          (h) => !(h.scheduleId === scheduleId && h.date === dateStr)
-        )
+        prev.filter((h) => !(h.scheduleId === scheduleId && h.date === dateStr))
       );
     }
   }
@@ -372,9 +393,7 @@ export default function GoalsPage() {
       const ts = tasksByGoal[g.id] ?? [];
       ts
         .filter((t) => !t.completed)
-        .forEach((t) =>
-          items.push({ goalId: g.id, goalTitle: g.title, task: t })
-        );
+        .forEach((t) => items.push({ goalId: g.id, goalTitle: g.title, task: t }));
     }
     return items;
   }, [goals, tasksByGoal]);
@@ -452,10 +471,7 @@ export default function GoalsPage() {
             <h2 style={{ marginTop: 0 }}>新規リスト</h2>
 
             <label>Title</label>
-            <input
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-            />
+            <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
 
             <label>Annual Income（JPY換算でもOK）</label>
             <input
@@ -536,10 +552,7 @@ export default function GoalsPage() {
                           >
                             {t.title}{" "}
                             {!t.completed && (
-                              <span
-                                className="badge"
-                                style={{ marginLeft: 8 }}
-                              >
+                              <span className="badge" style={{ marginLeft: 8 }}>
                                 drag
                               </span>
                             )}
@@ -554,9 +567,7 @@ export default function GoalsPage() {
                         </div>
 
                         <div className="row" style={{ gap: 8 }}>
-                          <button onClick={() => onEditTask(t, g.id)}>
-                            Edit
-                          </button>
+                          <button onClick={() => onEditTask(t, g.id)}>Edit</button>
                           {!t.completed && (
                             <button
                               className="primary"
@@ -581,101 +592,205 @@ export default function GoalsPage() {
         <div className="card" style={{ marginBottom: 16 }}>
           <div className="row-between">
             <h2 style={{ marginTop: 0 }}>カレンダー</h2>
-            <div className="small muted">日付クリック or タスクをD&D</div>
+
+            <div className="row" style={{ gap: 8, alignItems: "center" }}>
+              <div className="small muted">日付クリック or タスクをD&amp;D</div>
+
+              {/* ★ 追加：トグル（PC/スマホ両方） */}
+              <button
+                onClick={() => setTaskListOpen((v) => !v)}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: 999,
+                  border: "1px solid rgba(0,0,0,0.12)",
+                  background: "white",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+              >
+                {taskListOpen ? "タスクリストを閉じる" : "タスクリストを開く"}
+              </button>
+            </div>
           </div>
 
-          <div
-            style={{
-              marginTop: 8,
-              display: "grid",
-              gridTemplateColumns: "minmax(220px,260px) minmax(0,1fr)",
-              gap: 16,
-              alignItems: "flex-start",
-            }}
-          >
-            {/* 左：タスクリスト（ドラッグ専用） */}
-            <div
-              style={{
-                background: "#fafafa",
-                borderRadius: 12,
-                padding: 8,
-                maxHeight: 520,
-                overflowY: "auto",
-              }}
-            >
-              <div className="row-between" style={{ marginBottom: 8 }}>
-                <h3 style={{ margin: 0, fontSize: 16 }}>タスクリスト</h3>
-                <div className="small muted">{dragTaskList.length}件</div>
-              </div>
-              <div className="small muted" style={{ marginBottom: 6 }}>
-                右側のカレンダーにドラッグ＆ドロップしてスケジュール登録
-              </div>
-
-              {dragTaskList.length === 0 ? (
-                <div className="small muted">未完了タスクはありません</div>
-              ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 6,
-                  }}
-                >
-                  {dragTaskList.map(({ goalId, goalTitle, task }) => (
-                    <div
-                      key={`${goalId}-${task.id}`}
-                      style={{
-                        padding: "6px 8px",
-                        borderRadius: 10,
-                        border: "1px solid rgba(0,0,0,0.08)",
-                        background: "rgba(0,0,0,0.02)",
-                        cursor: "grab",
-                        userSelect: "none",
-                        fontSize: 12,
-                      }}
-                      draggable
-                      onDragStart={(e) => {
-                        const payload: DragTaskPayload = {
-                          kind: "task",
-                          goalId,
-                          taskId: task.id,
-                          title: task.title,
-                        };
-                        e.dataTransfer.setData(
-                          "application/json",
-                          JSON.stringify(payload)
-                        );
-                        e.dataTransfer.effectAllowed = "copy";
-                      }}
-                      title={`${goalTitle} / ${task.title}`}
-                    >
-                      <div
-                        style={{
-                          fontWeight: 600,
-                          marginBottom: 2,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {task.title}
-                      </div>
-                      <div className="small muted">{goalTitle}</div>
+          <div style={{ marginTop: 8 }}>
+            {/* ---- スマホ：縦積み ---- */}
+            {isSmall ? (
+              <>
+                {taskListOpen && (
+                  <div
+                    style={{
+                      background: "#fafafa",
+                      borderRadius: 12,
+                      padding: 8,
+                      marginBottom: 12,
+                      maxHeight: 280,
+                      overflowY: "auto",
+                    }}
+                  >
+                    <div className="row-between" style={{ marginBottom: 8 }}>
+                      <h3 style={{ margin: 0, fontSize: 16 }}>タスクリスト</h3>
+                      <div className="small muted">{dragTaskList.length}件</div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    <div className="small muted" style={{ marginBottom: 6 }}>
+                      カレンダーにドラッグ＆ドロップして登録
+                    </div>
 
-            {/* 右：カレンダー本体 */}
-            <div style={{ overflowX: "auto" }}>
-              <Calender
-                events={schedules}
-                onDayClick={(d) => openNewSchedule(d, undefined, toYMD(d))}
-                onDropTask={handleDropTask}
-                onEventClick={handleEventClick}
-              />
-            </div>
+                    {dragTaskList.length === 0 ? (
+                      <div className="small muted">未完了タスクはありません</div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {dragTaskList.map(({ goalId, goalTitle, task }) => (
+                          <div
+                            key={`${goalId}-${task.id}`}
+                            style={{
+                              padding: "6px 8px",
+                              borderRadius: 10,
+                              border: "1px solid rgba(0,0,0,0.08)",
+                              background: "rgba(0,0,0,0.02)",
+                              cursor: "grab",
+                              userSelect: "none",
+                              fontSize: 12,
+                            }}
+                            draggable
+                            onDragStart={(e) => {
+                              const payload: DragTaskPayload = {
+                                kind: "task",
+                                goalId,
+                                taskId: task.id,
+                                title: task.title,
+                              };
+                              e.dataTransfer.setData(
+                                "application/json",
+                                JSON.stringify(payload)
+                              );
+                              e.dataTransfer.effectAllowed = "copy";
+                            }}
+                            title={`${goalTitle} / ${task.title}`}
+                          >
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                marginBottom: 2,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {task.title}
+                            </div>
+                            <div className="small muted">{goalTitle}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* カレンダー本体 */}
+                <div style={{ overflowX: "auto" }}>
+                  <Calender
+                    events={schedules}
+                    onDayClick={(d) => openNewSchedule(d, undefined, toYMD(d))}
+                    onDropTask={handleDropTask}
+                    onEventClick={handleEventClick}
+                  />
+                </div>
+              </>
+            ) : (
+              /* ---- PC：2カラム（開いてる時だけ） ---- */
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: taskListOpen
+                    ? "minmax(220px,260px) minmax(0,1fr)"
+                    : "minmax(0,1fr)",
+                  gap: 16,
+                  alignItems: "flex-start",
+                }}
+              >
+                {/* 左：タスクリスト */}
+                {taskListOpen && (
+                  <div
+                    style={{
+                      background: "#fafafa",
+                      borderRadius: 12,
+                      padding: 8,
+                      maxHeight: 520,
+                      overflowY: "auto",
+                    }}
+                  >
+                    <div className="row-between" style={{ marginBottom: 8 }}>
+                      <h3 style={{ margin: 0, fontSize: 16 }}>タスクリスト</h3>
+                      <div className="small muted">{dragTaskList.length}件</div>
+                    </div>
+                    <div className="small muted" style={{ marginBottom: 6 }}>
+                      右側のカレンダーにドラッグ＆ドロップしてスケジュール登録
+                    </div>
+
+                    {dragTaskList.length === 0 ? (
+                      <div className="small muted">未完了タスクはありません</div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {dragTaskList.map(({ goalId, goalTitle, task }) => (
+                          <div
+                            key={`${goalId}-${task.id}`}
+                            style={{
+                              padding: "6px 8px",
+                              borderRadius: 10,
+                              border: "1px solid rgba(0,0,0,0.08)",
+                              background: "rgba(0,0,0,0.02)",
+                              cursor: "grab",
+                              userSelect: "none",
+                              fontSize: 12,
+                            }}
+                            draggable
+                            onDragStart={(e) => {
+                              const payload: DragTaskPayload = {
+                                kind: "task",
+                                goalId,
+                                taskId: task.id,
+                                title: task.title,
+                              };
+                              e.dataTransfer.setData(
+                                "application/json",
+                                JSON.stringify(payload)
+                              );
+                              e.dataTransfer.effectAllowed = "copy";
+                            }}
+                            title={`${goalTitle} / ${task.title}`}
+                          >
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                marginBottom: 2,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {task.title}
+                            </div>
+                            <div className="small muted">{goalTitle}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 右：カレンダー本体 */}
+                <div style={{ overflowX: "auto", minWidth: 0 }}>
+                  <Calender
+                    events={schedules}
+                    onDayClick={(d) => openNewSchedule(d, undefined, toYMD(d))}
+                    onDropTask={handleDropTask}
+                    onEventClick={handleEventClick}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
