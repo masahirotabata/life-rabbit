@@ -139,6 +139,41 @@ export default function GoalsPage() {
   }, []);
   // ====== ★ 追加ここまで ======
 
+  // ====== ★ 追加：スマホでカレンダーを1画面に収める自動スケール ======
+  const calFitRef = useRef<HTMLDivElement | null>(null);
+  const [calScale, setCalScale] = useState(1);
+
+  useEffect(() => {
+    // スマホのカレンダータブだけ適用
+    if (!isSmall || activeTab !== "calendar") {
+      setCalScale(1);
+      return;
+    }
+
+    const el = calFitRef.current;
+    if (!el) return;
+
+    const recompute = () => {
+      // レイアウト確定後に計測（イベントが多い・画像読み込みなどでもズレにくい）
+      requestAnimationFrame(() => {
+        const rect = el.getBoundingClientRect();
+        const available = window.innerHeight - rect.top - 12; // 下余白 12px
+        const natural = el.scrollHeight; // スケール前の本来高さ
+        if (!natural || natural <= 0) return;
+
+        const next = Math.min(1, available / natural);
+        // 小さくしすぎるとタップしづらいので下限を設ける
+        setCalScale(Math.max(0.78, next));
+      });
+    };
+
+    recompute();
+    window.addEventListener("resize", recompute);
+
+    return () => window.removeEventListener("resize", recompute);
+  }, [isSmall, activeTab, taskListOpen, schedules.length]);
+  // ====== ★ 追加ここまで ======
+
   // ★ 初回マウント時に lifeRabbit スプラッシュを少しだけ表示
   useEffect(() => {
     const timer = setTimeout(() => setShowSplash(false), 1500); // 1.5秒表示
@@ -688,14 +723,24 @@ export default function GoalsPage() {
                   </div>
                 )}
 
-                {/* カレンダー本体 */}
-                <div style={{ overflowX: "auto" }}>
-                  <Calender
-                    events={schedules}
-                    onDayClick={(d) => openNewSchedule(d, undefined, toYMD(d))}
-                    onDropTask={handleDropTask}
-                    onEventClick={handleEventClick}
-                  />
+                {/* カレンダー本体：スマホは“1画面に収める”ために自動スケール */}
+                <div style={{ overflow: "hidden" }}>
+                  <div
+                    ref={calFitRef}
+                    style={{
+                      transform: `scale(${calScale})`,
+                      transformOrigin: "top left",
+                      // scaleすると横幅も縮むので、幅を逆補正してクリップを防ぐ
+                      width: calScale === 1 ? "100%" : `calc(100% / ${calScale})`,
+                    }}
+                  >
+                    <Calender
+                      events={schedules}
+                      onDayClick={(d) => openNewSchedule(d, undefined, toYMD(d))}
+                      onDropTask={handleDropTask}
+                      onEventClick={handleEventClick}
+                    />
+                  </div>
                 </div>
               </>
             ) : (
