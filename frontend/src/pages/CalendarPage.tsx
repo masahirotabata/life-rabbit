@@ -20,7 +20,15 @@ function endOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth() + 1, 0);
 }
 function dowMaskFromInput(input: string): number {
-  const map: Record<string, number> = { sun: 1, mon: 2, tue: 4, wed: 8, thu: 16, fri: 32, sat: 64 };
+  const map: Record<string, number> = {
+    sun: 1,
+    mon: 2,
+    tue: 4,
+    wed: 8,
+    thu: 16,
+    fri: 32,
+    sat: 64,
+  };
   return input
     .split(",")
     .map((s) => s.trim().toLowerCase())
@@ -28,18 +36,25 @@ function dowMaskFromInput(input: string): number {
 }
 
 export default function CalendarPage() {
+  // ★ 反映確認用ログ（まずこれが出るか確認！）
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("CalendarPage v2025-12-24");
+  }, []);
+
   const [month, setMonth] = useState(() => new Date());
   const [selected, setSelected] = useState(() => ymd(new Date()));
   const [items, setItems] = useState<any[]>([]);
   const [collapsed, setCollapsed] = useState(false);
 
-  // 左タスクリスト
+  // ★ 左「タスクリスト」用
   const [poolTasks, setPoolTasks] = useState<any[]>([]);
   const [taskListOpen, setTaskListOpen] = useState<boolean>(true);
 
-  // 画面幅（CSSに頼らずJS側でも判断）
+  // ★ 画面幅（JS側でも判断）
   const [isSmall, setIsSmall] = useState(false);
 
+  // ★ スマホはデフォルト閉じる + リサイズ追従
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -47,17 +62,15 @@ export default function CalendarPage() {
     const apply = () => {
       const small = mq.matches;
       setIsSmall(small);
-      // 初回だけ：スマホは閉じ、PCは開き
+      // 初回の「それっぽい状態」なら、スマホ=閉 / PC=開 に寄せる
       setTaskListOpen((prev) => {
-        // 既にユーザー操作済みなら維持したいので、初期値っぽい時だけ切り替える
-        // （prev が true のままなら初期とみなして切り替え）
+        // 初期trueのままなら初回扱いで上書き
         if (prev === true) return !small;
         return prev;
       });
     };
 
     apply();
-    // 画面リサイズ追従
     mq.addEventListener?.("change", apply);
     return () => mq.removeEventListener?.("change", apply);
   }, []);
@@ -106,7 +119,9 @@ export default function CalendarPage() {
 
     const title = prompt("タスク名を入力してください");
     if (!title) return;
-    const memo = prompt("メモ（省略OK）") ?? "";
+
+    // memo は今のAPIに保存先が無いなら保持だけ（将来 updateTask を作る）
+    prompt("メモ（省略OK）") ?? "";
 
     const created = await addTask(null as any, title);
     await upsertSchedule({ taskId: created.id, type: "DATE", date: dateStr });
@@ -116,11 +131,17 @@ export default function CalendarPage() {
   }
 
   async function onDropToDate(taskId: number, dateStr: string) {
-    const kind = prompt("スケジュール種類: 1=単日 2=期間 3=曜日繰り返し", "1") ?? "1";
+    const kind =
+      prompt("スケジュール種類: 1=単日 2=期間 3=曜日繰り返し", "1") ?? "1";
 
     if (kind === "2") {
       const end = prompt("終了日(yyyy-mm-dd)", dateStr) ?? dateStr;
-      await upsertSchedule({ taskId, type: "RANGE", startDate: dateStr, endDate: end });
+      await upsertSchedule({
+        taskId,
+        type: "RANGE",
+        startDate: dateStr,
+        endDate: end,
+      });
     } else if (kind === "3") {
       const end = prompt("終了日(yyyy-mm-dd) デフォルトは1ヶ月後", "") || "";
       const endDate =
@@ -130,7 +151,13 @@ export default function CalendarPage() {
           d.setMonth(d.getMonth() + 1);
           return ymd(d);
         })();
-      const dow = prompt("曜日: sun,mon,tue,wed,thu,fri,sat をカンマ区切り", "mon,wed,fri") ?? "";
+
+      const dow =
+        prompt(
+          "曜日: sun,mon,tue,wed,thu,fri,sat をカンマ区切り",
+          "mon,wed,fri"
+        ) ?? "";
+
       await upsertSchedule({
         taskId,
         type: "WEEKLY",
@@ -147,7 +174,7 @@ export default function CalendarPage() {
 
   const selectedItems = byDate[selected] ?? [];
 
-  // ★ CSSに頼らず、ここで2カラム/1カラムを切り替える
+  // ★ CSSに頼りすぎず、ここで2カラム/1カラムを制御
   const gridCols = !isSmall && taskListOpen ? "280px 1fr" : "1fr";
 
   return (
@@ -155,7 +182,7 @@ export default function CalendarPage() {
       <div className="row-between">
         <h1>lifeRabbit</h1>
 
-        <div className="row">
+        <div className="row" style={{ flexWrap: "wrap" }}>
           <button
             onClick={() => {
               const d = new Date(month);
@@ -190,8 +217,16 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <div className="cal-layout" style={{ gridTemplateColumns: gridCols, gap: 12, alignItems: "start" as const }}>
-        {/* モバイル時だけ overlay */}
+      <div
+        className="cal-layout"
+        style={{
+          display: "grid",
+          gridTemplateColumns: gridCols,
+          gap: 12,
+          alignItems: "start",
+        }}
+      >
+        {/* ★ モバイル時だけ overlay */}
         {isSmall && (
           <div
             className={`cal-overlay ${taskListOpen ? "is-open" : ""}`}
@@ -199,8 +234,8 @@ export default function CalendarPage() {
           />
         )}
 
-        {/* ★ サイドバーは「開いている時」だけ描画（CSS不要） */}
-        {(taskListOpen || !isSmall) && taskListOpen && (
+        {/* ★ サイドバー：開いている時だけ描画（モバイルは閉じたら消える） */}
+        {taskListOpen && (
           <aside className={`cal-sidebar ${taskListOpen ? "is-open" : ""}`}>
             <div className="row-between" style={{ marginBottom: 10 }}>
               <div style={{ fontWeight: 800 }}>タスクリスト</div>
@@ -222,9 +257,19 @@ export default function CalendarPage() {
                     key={t.id}
                     className="pool-task"
                     draggable
-                    onDragStart={(e) => e.dataTransfer.setData("text/taskId", String(t.id))}
+                    onDragStart={(e) =>
+                      e.dataTransfer.setData("text/taskId", String(t.id))
+                    }
                   >
-                    <div style={{ fontWeight: 700, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div
+                      style={{
+                        fontWeight: 700,
+                        minWidth: 0,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       {t.title}
                     </div>
                     {t.goalTitle && <div className="small">{t.goalTitle}</div>}
@@ -237,12 +282,14 @@ export default function CalendarPage() {
 
         <main className="cal-main" style={{ minWidth: 0 }}>
           {/* スマホ用：タスクリストを開くボタン */}
-          <div className="cal-toolbar">
-            <button className="cal-open" onClick={() => setTaskListOpen(true)}>
-              ☰ タスクリスト
-            </button>
-            <div className="small">日付クリック or タスクをD&amp;D</div>
-          </div>
+          {isSmall && (
+            <div className="cal-toolbar">
+              <button className="cal-open" onClick={() => setTaskListOpen(true)}>
+                ☰ タスクリスト
+              </button>
+              <div className="small">日付クリック or タスクをD&amp;D</div>
+            </div>
+          )}
 
           <div className="calendar-wrap">
             <div className="calendar-grid">
@@ -304,23 +351,36 @@ export default function CalendarPage() {
           <div style={{ marginTop: 14 }}>
             <div className="row-between">
               <h2 style={{ margin: 0 }}>ToDo（{selected}）</h2>
-              <button onClick={() => setCollapsed((v) => !v)}>{collapsed ? "開く" : "閉じる"}</button>
+              <button onClick={() => setCollapsed((v) => !v)}>
+                {collapsed ? "開く" : "閉じる"}
+              </button>
             </div>
 
             {!collapsed && (
               <div className="card" style={{ marginTop: 10 }}>
                 {selectedItems.length === 0 ? (
-                  <div className="small">この日のタスクはありません（セルをタップして追加）</div>
+                  <div className="small">
+                    この日のタスクはありません（セルをタップして追加）
+                  </div>
                 ) : (
                   selectedItems.map((it: any) => (
                     <div
                       key={`${it.taskId}@${it.date}`}
                       className="task"
                       draggable
-                      onDragStart={(e) => e.dataTransfer.setData("text/taskId", String(it.taskId))}
+                      onDragStart={(e) =>
+                        e.dataTransfer.setData("text/taskId", String(it.taskId))
+                      }
                     >
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        <div
+                          style={{
+                            fontWeight: 800,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
                           {it.title}
                         </div>
                         {it.memo && <div className="small">{it.memo}</div>}
