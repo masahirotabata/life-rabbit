@@ -20,7 +20,15 @@ function endOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth() + 1, 0);
 }
 function dowMaskFromInput(input: string): number {
-  const map: Record<string, number> = { sun: 1, mon: 2, tue: 4, wed: 8, thu: 16, fri: 32, sat: 64 };
+  const map: Record<string, number> = {
+    sun: 1,
+    mon: 2,
+    tue: 4,
+    wed: 8,
+    thu: 16,
+    fri: 32,
+    sat: 64,
+  };
   return input
     .split(",")
     .map((s) => s.trim().toLowerCase())
@@ -100,11 +108,17 @@ export default function CalendarPage() {
   }
 
   async function onDropToDate(taskId: number, dateStr: string) {
-    const kind = prompt("スケジュール種類: 1=単日 2=期間 3=曜日繰り返し", "1") ?? "1";
+    const kind =
+      prompt("スケジュール種類: 1=単日 2=期間 3=曜日繰り返し", "1") ?? "1";
 
     if (kind === "2") {
       const end = prompt("終了日(yyyy-mm-dd)", dateStr) ?? dateStr;
-      await upsertSchedule({ taskId, type: "RANGE", startDate: dateStr, endDate: end });
+      await upsertSchedule({
+        taskId,
+        type: "RANGE",
+        startDate: dateStr,
+        endDate: end,
+      });
     } else if (kind === "3") {
       const end = prompt("終了日(yyyy-mm-dd) デフォルトは1ヶ月後", "") || "";
       const endDate =
@@ -114,7 +128,11 @@ export default function CalendarPage() {
           d.setMonth(d.getMonth() + 1);
           return ymd(d);
         })();
-      const dow = prompt("曜日: sun,mon,tue,wed,thu,fri,sat をカンマ区切り", "mon,wed,fri") ?? "";
+      const dow =
+        prompt(
+          "曜日: sun,mon,tue,wed,thu,fri,sat をカンマ区切り",
+          "mon,wed,fri"
+        ) ?? "";
       await upsertSchedule({
         taskId,
         type: "WEEKLY",
@@ -160,11 +178,22 @@ export default function CalendarPage() {
           >
             ▶
           </button>
+
+          {/* ★ PCでもタスクリストを開閉できるトグルボタン（追加） */}
+          <button
+            onClick={() => setTaskListOpen((v) => !v)}
+            style={{ marginLeft: 8 }}
+          >
+            {taskListOpen ? "タスクリストを閉じる" : "タスクリストを開く"}
+          </button>
         </div>
       </div>
 
       {/* ★ レイアウト：左タスクリスト（開閉） + 右カレンダー */}
-      <div className="cal-layout">
+      {/* ★ is-open / is-closed クラス付与（追加） */}
+      <div
+        className={`cal-layout ${taskListOpen ? "is-open" : "is-closed"}`}
+      >
         {/* モバイルで開いた時の背景 */}
         <div
           className={`cal-overlay ${taskListOpen ? "is-open" : ""}`}
@@ -192,9 +221,19 @@ export default function CalendarPage() {
                   key={t.id}
                   className="pool-task"
                   draggable
-                  onDragStart={(e) => e.dataTransfer.setData("text/taskId", String(t.id))}
+                  onDragStart={(e) =>
+                    e.dataTransfer.setData("text/taskId", String(t.id))
+                  }
                 >
-                  <div style={{ fontWeight: 700, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      minWidth: 0,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     {t.title}
                   </div>
                   {t.goalTitle && <div className="small">{t.goalTitle}</div>}
@@ -234,7 +273,9 @@ export default function CalendarPage() {
                     onClick={() => onClickDate(dateStr)}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => {
-                      const taskId = Number(e.dataTransfer.getData("text/taskId"));
+                      const taskId = Number(
+                        e.dataTransfer.getData("text/taskId")
+                      );
                       if (taskId) onDropToDate(taskId, dateStr);
                     }}
                     style={{
@@ -273,23 +314,36 @@ export default function CalendarPage() {
           <div style={{ marginTop: 14 }}>
             <div className="row-between">
               <h2 style={{ margin: 0 }}>ToDo（{selected}）</h2>
-              <button onClick={() => setCollapsed((v) => !v)}>{collapsed ? "開く" : "閉じる"}</button>
+              <button onClick={() => setCollapsed((v) => !v)}>
+                {collapsed ? "開く" : "閉じる"}
+              </button>
             </div>
 
             {!collapsed && (
               <div className="card" style={{ marginTop: 10 }}>
                 {selectedItems.length === 0 ? (
-                  <div className="small">この日のタスクはありません（セルをタップして追加）</div>
+                  <div className="small">
+                    この日のタスクはありません（セルをタップして追加）
+                  </div>
                 ) : (
                   selectedItems.map((it: any) => (
                     <div
                       key={`${it.taskId}@${it.date}`}
                       className="task"
                       draggable
-                      onDragStart={(e) => e.dataTransfer.setData("text/taskId", String(it.taskId))}
+                      onDragStart={(e) =>
+                        e.dataTransfer.setData("text/taskId", String(it.taskId))
+                      }
                     >
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        <div
+                          style={{
+                            fontWeight: 800,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
                           {it.title}
                         </div>
                         {it.memo && <div className="small">{it.memo}</div>}

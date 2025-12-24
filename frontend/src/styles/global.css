@@ -638,6 +638,14 @@ input, button, textarea, select {
   .calendar-cell{ padding: 6px; min-height: 56px; }
 }
 
+/* PCでもタスクリストを閉じたらカレンダーを全幅に */
+.cal-layout.is-closed {
+  grid-template-columns: 1fr;
+}
+
+.cal-layout.is-closed .cal-sidebar {
+  display: none;
+}
 
 
 
