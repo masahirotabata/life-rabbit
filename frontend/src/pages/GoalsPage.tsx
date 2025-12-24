@@ -447,9 +447,9 @@ export default function GoalsPage() {
       {/* === ToDo タブ === */}
       {activeTab === "todo" && (
         <>
-          {/* 新規Goal */}
+          {/* 新規リスト*/}
           <div className="card" style={{ marginBottom: 16 }}>
-            <h2 style={{ marginTop: 0 }}>新規Goal</h2>
+            <h2 style={{ marginTop: 0 }}>新規リスト</h2>
 
             <label>Title</label>
             <input

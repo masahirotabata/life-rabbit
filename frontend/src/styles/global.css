@@ -430,6 +430,116 @@ html, body {
   flex-wrap: wrap;
 }
 
+/* まずこれ。inputのはみ出しの9割が直る */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.card {
+  width: 100%;
+  overflow: hidden; /* はみ出し保険 */
+}
+
+input, button, textarea, select {
+  max-width: 100%;
+}
+
+/* これが超重要：フォーム入力を確実に幅100%に */
+.card input {
+  width: 100%;
+}
+
+/* ヘッダーなど横並びが崩れやすい箇所を折り返し */
+.row-between, .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* スマホ */
+@media (max-width: 480px) {
+  .container { padding: 12px; }
+  h1 { font-size: 28px; }
+  .card { padding: 14px; }
+
+  /* タブが横幅足りない時に潰れる対策 */
+  .card button {
+    min-width: 0;
+    font-size: 12px;
+  }
+}
+
+/* はみ出し・幅計算の崩れ対策 */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.card {
+  width: 100%;
+  overflow: hidden;
+}
+
+.row-between, .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap; /* ★スマホで崩れにくくなる */
+}
+
+/* カレンダーの崩れ対策（極端に狭い時に横スクロールで保険） */
+.calendar-wrap {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(44px, 1fr));
+  gap: 8px;
+  min-width: 320px; /* これより狭い端末はスクロール */
+}
+
+.calendar-dow {
+  text-align: center;
+}
+
+.calendar-cell {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px;
+  min-height: 72px;
+  cursor: pointer;
+}
+
+.calendar-dots {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+/* スマホ */
+@media (max-width: 480px) {
+  .container { padding: 12px; }
+  h1 { font-size: 28px; }
+  .calendar-grid { gap: 6px; }
+  .calendar-cell { padding: 8px; min-height: 64px; }
+}
+
+
 
 
 
