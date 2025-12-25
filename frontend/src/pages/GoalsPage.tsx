@@ -120,8 +120,10 @@ function goalColor(goalId: number) {
 function goalTag(goalTitle: string) {
   const t = goalTitle.toLowerCase();
   if (t.includes("セキ") || t.includes("支援") || t.includes("security")) return "📚セキスペ";
-  if (t.includes("ラン") || t.includes("run") || t.includes("ジョグ") || t.includes("マラソン")) return "🏃ラン";
-  if (t.includes("家事") || t.includes("育児") || t.includes("掃除") || t.includes("洗")) return "🏠家事";
+  if (t.includes("ラン") || t.includes("run") || t.includes("ジョグ") || t.includes("マラソン"))
+    return "🏃ラン";
+  if (t.includes("家事") || t.includes("育児") || t.includes("掃除") || t.includes("洗"))
+    return "🏠家事";
   return "🎯Goal";
 }
 
@@ -130,6 +132,9 @@ type TabId = "todo" | "calendar" | "history" | "other";
 export default function GoalsPage() {
   const nav = useNavigate();
   const userKey = useMemo(() => getUserKeyFromJwt(), []);
+
+  // ✅ mobile: DnDが効きにくいので「タップで選択→日付タップで登録」用
+  const [pickedTask, setPickedTask] = useState<DragTaskPayload | null>(null);
 
   // Splash
   const [showSplash, setShowSplash] = useState(true);
@@ -505,7 +510,9 @@ export default function GoalsPage() {
     const items: { goalId: number; goalTitle: string; task: TaskItem }[] = [];
     for (const g of goals as any[]) {
       const ts = tasksByGoal[g.id] ?? [];
-      ts.filter((t) => !t.completed).forEach((t) => items.push({ goalId: g.id, goalTitle: g.title, task: t }));
+      ts.filter((t) => !t.completed).forEach((t) =>
+        items.push({ goalId: g.id, goalTitle: g.title, task: t })
+      );
     }
     return items;
   }, [goals, tasksByGoal]);
@@ -539,11 +546,13 @@ export default function GoalsPage() {
   }
 
   return (
-    <div className="container" style={{ overflowX: "hidden" }}>
+    // ✅ 横スクロールを抑止。縦スクロールはbody側で自然にOK
+    <div className="container" style={{ overflowX: "hidden", maxWidth: "100vw" }}>
       <MoneyRainOverlay seed={rainSeed} />
 
-      {/* header */}
-      <div className="row-between">
+      {/* header（Liferabbit文字は削除。Logoutだけに） */}
+      <div className="row-between" style={{ alignItems: "center" }}>
+        <div />
         <button onClick={logout}>Logout</button>
       </div>
 
@@ -611,11 +620,11 @@ export default function GoalsPage() {
           {goals.map((g: any) => (
             <div className="card" key={g.id} style={{ marginBottom: 14 }}>
               <div className="row-between">
-                <div>
-                  <div style={{ fontSize: 22, fontWeight: 700 }}>{g.title}</div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 22, fontWeight: 700, wordBreak: "break-word" }}>{g.title}</div>
                   <div className="small">
-                    annualIncome: {g.annualIncome} / day: {(g.annualIncome / g.daysPerYear).toFixed(2)} / taskReward:{" "}
-                    {g.perTaskReward.toFixed(2)}
+                    annualIncome: {g.annualIncome} / day: {(g.annualIncome / g.daysPerYear).toFixed(2)} /
+                    taskReward: {g.perTaskReward.toFixed(2)}
                   </div>
                   <div className="small">
                     tasks: {g.completedTaskCount}/{g.taskCount} / earned: {g.earnedAmount.toFixed(2)} USD
@@ -638,7 +647,7 @@ export default function GoalsPage() {
                   ) : (
                     tasksByGoal[g.id].map((t) => (
                       <div key={t.id} className="task">
-                        <div style={{ flex: 1 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
                           <div
                             style={{ fontWeight: 600, cursor: "grab", userSelect: "none" }}
                             draggable={!t.completed}
@@ -662,10 +671,9 @@ export default function GoalsPage() {
                             )}
                           </div>
 
-                          {/* ✅ バッジ表示を統一 */}
                           <div className="small" style={{ display: "flex", gap: 8, alignItems: "center" }}>
                             <span className="badge">{goalTag(g.title)}</span>
-                            <span className="small muted" style={{ opacity: 0.8 }}>
+                            <span className="small muted" style={{ opacity: 0.8, minWidth: 0 }}>
                               {g.title}
                             </span>
                             <span className="badge">{t.completed ? "completed" : "todo"}</span>
@@ -705,10 +713,10 @@ export default function GoalsPage() {
       {/* Calendar */}
       {activeTab === "calendar" && (
         <div className="card" style={{ marginBottom: 16 }}>
-          <div className="row-between">
-            <h2 style={{ marginTop: 0 }}>カレンダー</h2>
+          <div className="row-between" style={{ gap: 8, flexWrap: "wrap" }}>
+            <h2 style={{ marginTop: 0, marginBottom: 0 }}>カレンダー</h2>
 
-            <div className="row" style={{ gap: 8, alignItems: "center" }}>
+            <div className="row" style={{ gap: 8, alignItems: "center", flexWrap: "wrap" }}>
               <div className="small muted">日付クリック or タスクをD&amp;D</div>
 
               <button
@@ -742,12 +750,33 @@ export default function GoalsPage() {
                       overflowY: "auto",
                     }}
                   >
-                    <div className="row-between" style={{ marginBottom: 8 }}>
+                    <div className="row-between" style={{ marginBottom: 8, gap: 8 }}>
                       <h3 style={{ margin: 0, fontSize: 16 }}>タスクリスト</h3>
-                      <div className="small muted">{dragTaskList.length}件</div>
+
+                      <div className="row" style={{ gap: 8, alignItems: "center" }}>
+                        <div className="small muted">{dragTaskList.length}件</div>
+                        {pickedTask && (
+                          <button
+                            onClick={() => setPickedTask(null)}
+                            style={{
+                              padding: "4px 8px",
+                              borderRadius: 999,
+                              border: "1px solid rgba(0,0,0,0.12)",
+                              background: "white",
+                              cursor: "pointer",
+                              fontSize: 12,
+                              fontWeight: 600,
+                            }}
+                          >
+                            選択解除
+                          </button>
+                        )}
+                      </div>
                     </div>
+
+                    {/* ✅ スマホはD&Dではなくタップ選択 */}
                     <div className="small muted" style={{ marginBottom: 6 }}>
-                      カレンダーにドラッグ＆ドロップして登録
+                      タスクをタップして選択 → カレンダーの日付をタップで登録
                     </div>
 
                     {dragTaskList.length === 0 ? (
@@ -759,6 +788,8 @@ export default function GoalsPage() {
                           const linked = schedulesByTaskRef.get(key) ?? [];
                           const dot = goalColor(goalId);
                           const tag = goalTag(goalTitle);
+                          const isPicked =
+                            pickedTask?.goalId === goalId && pickedTask?.taskId === task.id;
 
                           return (
                             <div
@@ -766,30 +797,30 @@ export default function GoalsPage() {
                               style={{
                                 padding: "8px 10px",
                                 borderRadius: 10,
-                                border: "1px solid rgba(0,0,0,0.08)",
-                                background: "rgba(0,0,0,0.02)",
+                                border: isPicked
+                                  ? "1px solid rgba(0,0,0,0.35)"
+                                  : "1px solid rgba(0,0,0,0.08)",
+                                background: isPicked ? "rgba(0,0,0,0.05)" : "rgba(0,0,0,0.02)",
                               }}
                             >
+                              {/* ✅ タップで選択 */}
                               <div
                                 style={{
                                   display: "flex",
                                   alignItems: "center",
                                   gap: 8,
-                                  cursor: "grab",
+                                  cursor: "pointer",
                                   userSelect: "none",
                                 }}
-                                draggable
-                                onDragStart={(e) => {
-                                  const payload: DragTaskPayload = {
+                                onClick={() =>
+                                  setPickedTask({
                                     kind: "task",
                                     goalId,
                                     taskId: task.id,
                                     title: task.title,
-                                  };
-                                  e.dataTransfer.setData("application/json", JSON.stringify(payload));
-                                  e.dataTransfer.effectAllowed = "copy";
-                                }}
-                                title={`${goalTitle} / ${task.title}`}
+                                  })
+                                }
+                                title="タップして選択 → 日付タップで登録"
                               >
                                 <span
                                   style={{
@@ -811,7 +842,13 @@ export default function GoalsPage() {
                                     }}
                                   >
                                     {task.title}
+                                    {isPicked && (
+                                      <span className="badge" style={{ marginLeft: 6 }}>
+                                        選択中
+                                      </span>
+                                    )}
                                   </div>
+
                                   <div className="small muted" style={{ display: "flex", gap: 6 }}>
                                     <span>{tag}</span>
                                     <span
@@ -834,7 +871,14 @@ export default function GoalsPage() {
                               </div>
 
                               {linked.length > 0 && (
-                                <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 6 }}>
+                                <div
+                                  style={{
+                                    marginTop: 6,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 6,
+                                  }}
+                                >
                                   {linked.map((ev) => (
                                     <div
                                       key={ev.id}
@@ -857,7 +901,9 @@ export default function GoalsPage() {
                                       </div>
 
                                       <button
-                                        onClick={() => openNewSchedule(parseYMD(ev.startDate), ev, ev.startDate)}
+                                        onClick={() =>
+                                          openNewSchedule(parseYMD(ev.startDate), ev, ev.startDate)
+                                        }
                                         style={{
                                           padding: "4px 8px",
                                           borderRadius: 999,
@@ -894,7 +940,29 @@ export default function GoalsPage() {
                     <div ref={calContentRef}>
                       <Calender
                         events={schedules}
-                        onDayClick={(d) => openNewSchedule(d, undefined, toYMD(d))}
+                        onDayClick={(d) => {
+                          // ✅ スマホ: タスク選択中なら、そのタスクで新規スケジュール作成
+                          if (pickedTask) {
+                            openNewSchedule(
+                              d,
+                              {
+                                title: pickedTask.title,
+                                memo: "",
+                                taskRef: {
+                                  goalId: pickedTask.goalId,
+                                  taskId: pickedTask.taskId,
+                                },
+                              },
+                              toYMD(d)
+                            );
+                            setPickedTask(null); // 1回登録したら解除
+                            return;
+                          }
+
+                          // 通常: ただの日付クリック
+                          openNewSchedule(d, undefined, toYMD(d));
+                        }}
+                        // iPhoneではDnDが効きにくいが、PC/一部環境では動くので残してOK
                         onDropTask={handleDropTask}
                         onEventClick={handleEventClick}
                       />
@@ -906,12 +974,14 @@ export default function GoalsPage() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: taskListOpen ? "minmax(220px,260px) minmax(0,1fr)" : "minmax(0,1fr)",
+                  gridTemplateColumns: taskListOpen
+                    ? "minmax(220px,260px) minmax(0,1fr)"
+                    : "minmax(0,1fr)",
                   gap: 16,
                   alignItems: "flex-start",
                 }}
               >
-                {/* PC left task list */}
+                {/* PC left task list（ここは従来通り DnD） */}
                 {taskListOpen && (
                   <div
                     style={{
@@ -1014,7 +1084,14 @@ export default function GoalsPage() {
                               </div>
 
                               {linked.length > 0 && (
-                                <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 6 }}>
+                                <div
+                                  style={{
+                                    marginTop: 6,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 6,
+                                  }}
+                                >
                                   {linked.map((ev) => (
                                     <div
                                       key={ev.id}
@@ -1037,7 +1114,9 @@ export default function GoalsPage() {
                                       </div>
 
                                       <button
-                                        onClick={() => openNewSchedule(parseYMD(ev.startDate), ev, ev.startDate)}
+                                        onClick={() =>
+                                          openNewSchedule(parseYMD(ev.startDate), ev, ev.startDate)
+                                        }
                                         style={{
                                           padding: "4px 8px",
                                           borderRadius: 999,
