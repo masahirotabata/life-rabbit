@@ -539,12 +539,11 @@ export default function GoalsPage() {
   }
 
   return (
-    <div className="container">
+    <div className="container" style={{ overflowX: "hidden" }}>
       <MoneyRainOverlay seed={rainSeed} />
 
       {/* header */}
       <div className="row-between">
-        <h1>Liferabbit</h1>
         <button onClick={logout}>Logout</button>
       </div>
 

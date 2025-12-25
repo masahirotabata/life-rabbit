@@ -647,7 +647,40 @@ input, button, textarea, select {
   display: none;
 }
 
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;   /* 横スクロール禁止 */
+}
 
+* {
+  box-sizing: border-box;
+}
+
+/* iOSのステータスバー/ホームバーに被らない */
+.container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;   /* 横スクロール禁止（念のため二重） */
+  padding-left: 12px;
+  padding-right: 12px;
+
+  /* ここが重要：safe area */
+  padding-top: calc(12px + env(safe-area-inset-top));
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+}
+
+/* もしrow-between等が原因で横にはみ出す場合の保険 */
+.row-between {
+  min-width: 0;
+}
+.card {
+  min-width: 0;
+}
+
+body {
+  overscroll-behavior-x: none;
+}
 
 
 
