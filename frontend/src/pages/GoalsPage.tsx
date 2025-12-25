@@ -726,26 +726,6 @@ export default function GoalsPage() {
               >
                 {taskListOpen ? "タスクリストを閉じる" : "タスクリストを開く"}
               </button>
-
-              <button
-                onClick={() => {
-                  const v = prompt("テンプレを追加：1)セキスペ 2)ラン 3)家事", "1");
-                  if (v === "1") addTemplate("secsp");
-                  else if (v === "2") addTemplate("run");
-                  else if (v === "3") addTemplate("house");
-                }}
-                style={{
-                  padding: "6px 10px",
-                  borderRadius: 999,
-                  border: "1px solid rgba(0,0,0,0.12)",
-                  background: "white",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  fontWeight: 600,
-                }}
-              >
-                テンプレ追加
-              </button>
             </div>
           </div>
 
