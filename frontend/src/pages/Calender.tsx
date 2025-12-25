@@ -17,10 +17,17 @@ export type ScheduleEvent = {
   weekdays: boolean[]; // [Sun..Sat] length=7
   taskRef?: { goalId: number; taskId: number };
 
+  // optional time
   startTime?: string; // "HH:MM"
   endTime?: string; // "HH:MM"
+
+  // one-shot (単発)
   oneShot?: boolean;
+
+  // tags (paid feature etc)
   tags?: string[];
+
+  // ✅ one-day completion
   completedDates?: string[]; // ["2025-12-15", ...]
 };
 
@@ -71,7 +78,7 @@ function buildMonthGrid(base: Date) {
 function hasEventOnDate(ev: ScheduleEvent, date: Date): boolean {
   const key = toYMD(date);
   const weekdays = ev.weekdays ?? [];
-  const isOneShot = ev.oneShot || weekdays.length === 0;
+  const isOneShot = !!ev.oneShot || weekdays.length === 0;
 
   if (isOneShot) return key === ev.startDate;
 
@@ -86,7 +93,7 @@ function getEventsForDate(events: ScheduleEvent[], date: Date): ScheduleEvent[] 
   return events.filter((ev) => hasEventOnDate(ev, date));
 }
 
-// ✅ 4文字までにする（絵文字なども一応考慮して Array.from）
+// ✅ 4文字まで（絵文字も考慮して Array.from）
 function short4(s: string) {
   const chars = Array.from(s ?? "");
   return chars.slice(0, 4).join("");
@@ -112,7 +119,7 @@ export default function Calender(props: Props) {
     return map;
   }, [cells, events]);
 
-  // ===== Responsive sizing (ここが肝) =====
+  // ===== Responsive sizing =====
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [wrapW, setWrapW] = useState(0);
 
@@ -120,17 +127,28 @@ export default function Calender(props: Props) {
     const el = wrapperRef.current;
     if (!el) return;
 
-    const ro = new ResizeObserver(() => {
-      setWrapW(el.getBoundingClientRect().width);
-    });
-    ro.observe(el);
+    // ✅ ResizeObserver が無い環境でも落ちないように保険
+    const ro =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => {
+            setWrapW(el.getBoundingClientRect().width);
+          })
+        : null;
 
+    ro?.observe(el);
     setWrapW(el.getBoundingClientRect().width);
 
-    return () => ro.disconnect();
+    const onResize = () => setWrapW(el.getBoundingClientRect().width);
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
 
   const GAP = wrapW && wrapW < 520 ? 4 : 6;
+
   const cellW = useMemo(() => {
     if (!wrapW) return 0;
     const inner = Math.max(0, wrapW - GAP * 6);
@@ -139,12 +157,11 @@ export default function Calender(props: Props) {
   }, [wrapW, GAP]);
 
   const isCompact = cellW > 0 && cellW < 70;
-
   const weekNames = ["日", "月", "火", "水", "木", "金", "土"];
 
   return (
     <div>
-      {/* 年月ナビゲーション */}
+      {/* 年月ナビ */}
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
         <button
           onClick={() => {
@@ -167,9 +184,9 @@ export default function Calender(props: Props) {
         </button>
       </div>
 
-      {/* カレンダー本体 */}
+      {/* 本体 */}
       <div ref={wrapperRef} style={{ width: "100%" }}>
-        {/* weekday header */}
+        {/* 曜日ヘッダ */}
         <div
           style={{
             display: "grid",
@@ -193,7 +210,7 @@ export default function Calender(props: Props) {
           ))}
         </div>
 
-        {/* grid */}
+        {/* 日付セル */}
         <div
           style={{
             display: "grid",
@@ -222,7 +239,9 @@ export default function Calender(props: Props) {
                   try {
                     const parsed = JSON.parse(raw) as DragTaskPayload;
                     if (parsed?.kind === "task") onDropTask(d, parsed);
-                  } catch {}
+                  } catch {
+                    // ignore
+                  }
                 }}
                 style={{
                   border: "1px solid rgba(0,0,0,0.08)",
@@ -234,7 +253,7 @@ export default function Calender(props: Props) {
                   boxSizing: "border-box",
                   display: "flex",
                   flexDirection: "column",
-                  overflow: "hidden", // ✅ 中身が溢れてもセルを広げない
+                  overflow: "hidden", // ✅ セルを広げない
                 }}
                 title="クリックで追加 / タスクをドロップで追加"
               >
@@ -251,7 +270,7 @@ export default function Calender(props: Props) {
                   </div>
                 </div>
 
-                {/* イベント */}
+                {/* イベント一覧 */}
                 <div
                   style={{
                     marginTop: isCompact ? 4 : 6,
@@ -259,7 +278,7 @@ export default function Calender(props: Props) {
                     flexDirection: "column",
                     gap: isCompact ? 3 : 4,
                     minHeight: 0,
-                    overflow: "hidden", // ✅ ここも広がり防止
+                    overflow: "hidden",
                   }}
                 >
                   {list.slice(0, isCompact ? 2 : 3).map((ev) => {
@@ -271,7 +290,7 @@ export default function Calender(props: Props) {
                         : ev.startTime
                       : "";
 
-                    const displayTitle = short4(ev.title); // ✅ 4文字まで
+                    const displayTitle = short4(ev.title);
 
                     return (
                       <div
@@ -294,7 +313,7 @@ export default function Calender(props: Props) {
                           gap: 1,
                           overflow: "hidden",
                         }}
-                        title={ev.memo ? `${ev.title}\n${ev.memo}` : ev.title} // ✅ フルはここで見れる
+                        title={ev.memo ? `${ev.title}\n${ev.memo}` : ev.title}
                       >
                         {timeLabel && !isCompact && (
                           <div style={{ fontSize: 10, opacity: 0.75, lineHeight: 1.1, whiteSpace: "nowrap" }}>
@@ -306,9 +325,9 @@ export default function Calender(props: Props) {
                           style={{
                             fontWeight: 600,
                             lineHeight: 1.15,
-                            whiteSpace: "nowrap",       // ✅ 折り返し禁止
-                            overflow: "hidden",          // ✅ はみ出し隠す
-                            textOverflow: "ellipsis",    // ✅ …表示（必要なら）
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
                             maxWidth: "100%",
                           }}
                         >
