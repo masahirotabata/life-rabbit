@@ -86,6 +86,12 @@ function getEventsForDate(events: ScheduleEvent[], date: Date): ScheduleEvent[] 
   return events.filter((ev) => hasEventOnDate(ev, date));
 }
 
+// ✅ 4文字までにする（絵文字なども一応考慮して Array.from）
+function short4(s: string) {
+  const chars = Array.from(s ?? "");
+  return chars.slice(0, 4).join("");
+}
+
 export default function Calender(props: Props) {
   const { events, onDayClick, onDropTask, onEventClick } = props;
 
@@ -119,19 +125,16 @@ export default function Calender(props: Props) {
     });
     ro.observe(el);
 
-    // 初回も反映
     setWrapW(el.getBoundingClientRect().width);
 
     return () => ro.disconnect();
   }, []);
 
-  // 7列に収めるセル幅を計算（スマホでも横スクロール不要）
   const GAP = wrapW && wrapW < 520 ? 4 : 6;
   const cellW = useMemo(() => {
     if (!wrapW) return 0;
-    const inner = Math.max(0, wrapW - GAP * 6); // 7列の隙間が6個
+    const inner = Math.max(0, wrapW - GAP * 6);
     const w = Math.floor(inner / 7);
-    // 小さすぎると押せないので下限、PCは大きくなりすぎないよう上限
     return Math.max(44, Math.min(110, w));
   }, [wrapW, GAP]);
 
@@ -142,14 +145,7 @@ export default function Calender(props: Props) {
   return (
     <div>
       {/* 年月ナビゲーション */}
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          alignItems: "center",
-          marginBottom: 8,
-        }}
-      >
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
         <button
           onClick={() => {
             const d = new Date(base);
@@ -171,14 +167,13 @@ export default function Calender(props: Props) {
         </button>
       </div>
 
-      {/* カレンダー本体（横スクロール前提をやめる） */}
+      {/* カレンダー本体 */}
       <div ref={wrapperRef} style={{ width: "100%" }}>
         {/* weekday header */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns:
-              cellW > 0 ? `repeat(7, ${cellW}px)` : "repeat(7, 1fr)",
+            gridTemplateColumns: cellW > 0 ? `repeat(7, ${cellW}px)` : "repeat(7, 1fr)",
             gap: GAP,
             marginBottom: GAP,
             justifyContent: "space-between",
@@ -202,8 +197,7 @@ export default function Calender(props: Props) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns:
-              cellW > 0 ? `repeat(7, ${cellW}px)` : "repeat(7, 1fr)",
+            gridTemplateColumns: cellW > 0 ? `repeat(7, ${cellW}px)` : "repeat(7, 1fr)",
             gap: GAP,
             justifyContent: "space-between",
           }}
@@ -228,9 +222,7 @@ export default function Calender(props: Props) {
                   try {
                     const parsed = JSON.parse(raw) as DragTaskPayload;
                     if (parsed?.kind === "task") onDropTask(d, parsed);
-                  } catch {
-                    // ignore
-                  }
+                  } catch {}
                 }}
                 style={{
                   border: "1px solid rgba(0,0,0,0.08)",
@@ -242,17 +234,12 @@ export default function Calender(props: Props) {
                   boxSizing: "border-box",
                   display: "flex",
                   flexDirection: "column",
+                  overflow: "hidden", // ✅ 中身が溢れてもセルを広げない
                 }}
                 title="クリックで追加 / タスクをドロップで追加"
               >
-                {/* 日付ラベル */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
+                {/* 日付 */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div
                     style={{
                       fontSize: isCompact ? 10 : 12,
@@ -264,13 +251,15 @@ export default function Calender(props: Props) {
                   </div>
                 </div>
 
-                {/* イベント一覧 */}
+                {/* イベント */}
                 <div
                   style={{
                     marginTop: isCompact ? 4 : 6,
                     display: "flex",
                     flexDirection: "column",
                     gap: isCompact ? 3 : 4,
+                    minHeight: 0,
+                    overflow: "hidden", // ✅ ここも広がり防止
                   }}
                 >
                   {list.slice(0, isCompact ? 2 : 3).map((ev) => {
@@ -281,6 +270,8 @@ export default function Calender(props: Props) {
                         ? `${ev.startTime}〜${ev.endTime}`
                         : ev.startTime
                       : "";
+
+                    const displayTitle = short4(ev.title); // ✅ 4文字まで
 
                     return (
                       <div
@@ -293,9 +284,7 @@ export default function Calender(props: Props) {
                           fontSize: isCompact ? 9 : 11,
                           padding: isCompact ? "3px 4px" : "4px 6px",
                           borderRadius: 8,
-                          background: completed
-                            ? "rgba(0,0,0,0.15)"
-                            : "rgba(0,0,0,0.06)",
+                          background: completed ? "rgba(0,0,0,0.15)" : "rgba(0,0,0,0.06)",
                           textDecoration: completed ? "line-through" : "none",
                           opacity: completed ? 0.55 : 1,
                           cursor: "pointer",
@@ -305,37 +294,33 @@ export default function Calender(props: Props) {
                           gap: 1,
                           overflow: "hidden",
                         }}
-                        title={ev.memo ? `${ev.title}\n${ev.memo}` : ev.title}
+                        title={ev.memo ? `${ev.title}\n${ev.memo}` : ev.title} // ✅ フルはここで見れる
                       >
-                        {/* 時刻 */}
                         {timeLabel && !isCompact && (
-                          <div
-                            style={{
-                              fontSize: 10,
-                              opacity: 0.75,
-                              lineHeight: 1.1,
-                            }}
-                          >
+                          <div style={{ fontSize: 10, opacity: 0.75, lineHeight: 1.1, whiteSpace: "nowrap" }}>
                             {timeLabel}
                           </div>
                         )}
-                        {/* タイトル */}
+
                         <div
                           style={{
                             fontWeight: 600,
                             lineHeight: 1.15,
-                            wordBreak: "break-word",
+                            whiteSpace: "nowrap",       // ✅ 折り返し禁止
+                            overflow: "hidden",          // ✅ はみ出し隠す
+                            textOverflow: "ellipsis",    // ✅ …表示（必要なら）
+                            maxWidth: "100%",
                           }}
                         >
                           {ev.taskRef ? "🧩 " : ""}
-                          {ev.title}
+                          {displayTitle}
                         </div>
                       </div>
                     );
                   })}
 
                   {list.length > (isCompact ? 2 : 3) && (
-                    <div style={{ fontSize: isCompact ? 9 : 11, opacity: 0.6 }}>
+                    <div style={{ fontSize: isCompact ? 9 : 11, opacity: 0.6, whiteSpace: "nowrap" }}>
                       +{list.length - (isCompact ? 2 : 3)} more
                     </div>
                   )}

@@ -17,11 +17,12 @@ import MoneyRainOverlay from "../components/MoneyRainOverlay";
 import Calender, { DragTaskPayload, ScheduleEvent } from "./Calender";
 import ScheduleModal from "../components/ScheduleModel";
 
-// schedules 用 localStorage key
-const SKEY = "todo-money:schedules:v1";
+// schedules 用 localStorage key（ユーザー別）
+const SKEY = (userKey: string) => `todo-money:schedules:v1:${userKey}`;
 
-// ★ 履歴用
-const HISTORY_KEY = "todo-money:scheduleHistory:v1";
+// ★ 履歴用（ユーザー別）
+const HISTORY_KEY = (userKey: string) => `todo-money:scheduleHistory:v1:${userKey}`;
+
 
 type ScheduleHistoryItem = {
   id: string;
@@ -31,9 +32,9 @@ type ScheduleHistoryItem = {
   title: string;
 };
 
-function loadSchedules(): ScheduleEvent[] {
+function loadSchedules(userKey: string): ScheduleEvent[] {
   try {
-    const raw = localStorage.getItem(SKEY);
+    const raw = localStorage.getItem(SKEY(userKey));
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
@@ -42,13 +43,13 @@ function loadSchedules(): ScheduleEvent[] {
     return [];
   }
 }
-function saveSchedules(list: ScheduleEvent[]) {
-  localStorage.setItem(SKEY, JSON.stringify(list));
+function saveSchedules(userKey: string, list: ScheduleEvent[]) {
+  localStorage.setItem(SKEY(userKey), JSON.stringify(list));
 }
 
-function loadHistory(): ScheduleHistoryItem[] {
+function loadHistory(userKey: string): ScheduleHistoryItem[] {
   try {
-    const raw = localStorage.getItem(HISTORY_KEY);
+    const raw = localStorage.getItem(HISTORY_KEY(userKey));
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
@@ -57,13 +58,43 @@ function loadHistory(): ScheduleHistoryItem[] {
     return [];
   }
 }
-function saveHistory(list: ScheduleHistoryItem[]) {
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+function saveHistory(userKey: string, list: ScheduleHistoryItem[]) {
+  localStorage.setItem(HISTORY_KEY(userKey), JSON.stringify(list));
 }
+
 
 function uid() {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
+
+function getUserKeyFromJwt(): string {
+  // api.ts 側の保存キーが不明なので、よくある候補を全部見に行く
+  const token =
+    localStorage.getItem("todo-money:token") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    "";
+
+  if (!token || token.split(".").length < 2) return "guest";
+
+  try {
+    const payload = token.split(".")[1];
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const json = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    const obj = JSON.parse(json);
+
+    // email があればそれ、なければ sub / userId 系
+    return String(obj.email || obj.sub || obj.userId || obj.uid || "guest");
+  } catch {
+    return "guest";
+  }
+}
+
 
 // 便宜上ここにも YMD ヘルパー
 function pad2(n: number) {
@@ -77,6 +108,8 @@ type TabId = "todo" | "calendar" | "history" | "other";
 
 export default function GoalsPage() {
   const nav = useNavigate();
+  const userKey = useMemo(() => getUserKeyFromJwt(), []);
+
 
   // ★ スプラッシュ（lifeRabbit）
   const [showSplash, setShowSplash] = useState(true);
@@ -96,8 +129,9 @@ export default function GoalsPage() {
 
   // schedules
   const [schedules, setSchedules] = useState<ScheduleEvent[]>(() =>
-    loadSchedules()
+    loadSchedules(userKey)
   );
+
 
   // モーダル
   const [modalOpen, setModalOpen] = useState(false);
@@ -112,8 +146,9 @@ export default function GoalsPage() {
 
   // ★ 履歴
   const [history, setHistory] = useState<ScheduleHistoryItem[]>(() =>
-    loadHistory()
+    loadHistory(userKey)
   );
+
 
   // ★ タブ
   const [activeTab, setActiveTab] = useState<TabId>("calendar");
@@ -246,13 +281,13 @@ export default function GoalsPage() {
 
   // schedules 永続化
   useEffect(() => {
-    saveSchedules(schedules);
-  }, [schedules]);
+    saveSchedules(userKey, schedules);
+  }, [userKey, schedules]);
 
-  // 履歴 永続化
   useEffect(() => {
-    saveHistory(history);
-  }, [history]);
+    saveHistory(userKey, history);
+  }, [userKey, history]);
+
 
   async function onCreateGoal() {
     setError(null);
