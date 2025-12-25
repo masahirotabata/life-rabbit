@@ -16,6 +16,7 @@ import MoneyRainOverlay from "../components/MoneyRainOverlay";
 
 import Calender, { DragTaskPayload, ScheduleEvent } from "./Calender";
 import ScheduleModal from "../components/ScheduleModel";
+import BottomAdBanner from "../components/BottomAdBanner";
 
 // schedules 用 localStorage key（ユーザー別）
 const SKEY = (userKey: string) => `todo-money:schedules:v1:${userKey}`;
@@ -132,6 +133,10 @@ type TabId = "todo" | "calendar" | "history" | "other";
 export default function GoalsPage() {
   const nav = useNavigate();
   const userKey = useMemo(() => getUserKeyFromJwt(), []);
+
+  // ✅ 下部バナー
+  const BANNER_H = 60;
+  const ADMOB_BANNER_UNIT_ID = "ca-app-pub-3517487281025314/8255180291";
 
   // ✅ mobile: DnDが効きにくいので「タップで選択→日付タップで登録」用
   const [pickedTask, setPickedTask] = useState<DragTaskPayload | null>(null);
@@ -546,8 +551,15 @@ export default function GoalsPage() {
   }
 
   return (
-    // ✅ 横スクロールを抑止。縦スクロールはbody側で自然にOK
-    <div className="container" style={{ overflowX: "hidden", maxWidth: "100vw" }}>
+    // ✅ バナーぶん下に余白を確保（コンテンツが隠れない）
+    <div
+      className="container"
+      style={{
+        overflowX: "hidden",
+        maxWidth: "100vw",
+        paddingBottom: `calc(${BANNER_H}px + env(safe-area-inset-bottom))`,
+      }}
+    >
       <MoneyRainOverlay seed={rainSeed} />
 
       {/* header（Liferabbit文字は削除。Logoutだけに） */}
@@ -1234,6 +1246,9 @@ export default function GoalsPage() {
           <button onClick={logout}>ログアウト</button>
         </div>
       )}
+
+      {/* ✅ どのタブでも常時表示：下部固定バナー */}
+      <BottomAdBanner height={BANNER_H} mode="dummy" admobUnitId={ADMOB_BANNER_UNIT_ID} />
     </div>
   );
 }
