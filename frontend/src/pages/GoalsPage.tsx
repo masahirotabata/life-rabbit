@@ -17,12 +17,6 @@ import MoneyRainOverlay from "../components/MoneyRainOverlay";
 import Calender, { DragTaskPayload, ScheduleEvent } from "./Calender";
 import ScheduleModal from "../components/ScheduleModel";
 
-// schedules 用 localStorage key
-const SKEY = "todo-money:schedules:v1";
-
-// ★ 履歴用
-const HISTORY_KEY = "todo-money:scheduleHistory:v1";
-
 type ScheduleHistoryItem = {
   id: string;
   scheduleId: string;
@@ -31,34 +25,50 @@ type ScheduleHistoryItem = {
   title: string;
 };
 
+function getCurrentUserKey() {
+  const token = localStorage.getItem("todoMoneyToken");
+  if (!token) return "guest";
+
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.sub ?? payload.userId ?? payload.id ?? token;
+  } catch {
+    return token;
+  }
+}
+
+function scheduleKey() {
+  return `todo-money:schedules:v1:${getCurrentUserKey()}`;
+}
+
+function scheduleHistoryKey() {
+  return `todo-money:scheduleHistory:v1:${getCurrentUserKey()}`;
+}
+
 function loadSchedules(): ScheduleEvent[] {
   try {
-    const raw = localStorage.getItem(SKEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed;
+    const raw = localStorage.getItem(scheduleKey());
+    return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }
 }
+
 function saveSchedules(list: ScheduleEvent[]) {
-  localStorage.setItem(SKEY, JSON.stringify(list));
+  localStorage.setItem(scheduleKey(), JSON.stringify(list));
 }
 
 function loadHistory(): ScheduleHistoryItem[] {
   try {
-    const raw = localStorage.getItem(HISTORY_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed;
+    const raw = localStorage.getItem(scheduleHistoryKey());
+    return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }
 }
-function saveHistory(list: ScheduleHistoryItem[]) {
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+
+function saveHistory(list: any[]) {
+  localStorage.setItem(scheduleHistoryKey(), JSON.stringify(list));
 }
 
 function uid() {
