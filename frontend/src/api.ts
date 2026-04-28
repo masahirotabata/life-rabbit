@@ -14,6 +14,10 @@ export function clearToken() {
   sessionStorage.clear();
 }
 
+export function useApi() {
+  return {};
+}
+
 // =====================
 // Request helper
 // =====================
