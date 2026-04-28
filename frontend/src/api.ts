@@ -14,10 +14,6 @@ export function clearToken() {
   sessionStorage.clear();
 }
 
-export function useApi() {
-  return {};
-}
-
 // =====================
 // Request helper
 // =====================
@@ -54,6 +50,23 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 // 互換用（あなたの既存コードが fetchJson を呼ぶならこれでOK）
 const fetchJson = request;
+
+export function useApi() {
+  return {
+    get: <T = any>(path: string) => request<T>(path),
+
+    post: <T = any>(path: string, body?: any) =>
+      request<T>(path, {
+        method: "POST",
+        body: body === undefined ? undefined : JSON.stringify(body),
+      }),
+
+    delete: <T = any>(path: string) =>
+      request<T>(path, {
+        method: "DELETE",
+      }),
+  };
+}
 
 // =====================
 // Types
@@ -191,3 +204,5 @@ export async function history(from: string, to: string): Promise<any[]> {
     `/api/history?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
   );
 }
+
+
