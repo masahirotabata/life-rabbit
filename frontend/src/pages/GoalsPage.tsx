@@ -83,7 +83,7 @@ function toYMD(d: Date) {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-type TabId = "todo" | "calendar" | "history" | "other";
+type TabId = "todo" | "calendar" | "history";
 
 export default function GoalsPage() {
   const nav = useNavigate();
@@ -430,7 +430,6 @@ export default function GoalsPage() {
               { id: "todo", label: "ToDo" },
               { id: "calendar", label: "カレンダー" },
               { id: "history", label: "履歴" },
-              { id: "other", label: "その他" },
             ] as { id: TabId; label: string }[]
           ).map((tab) => (
             <button
@@ -745,41 +744,6 @@ export default function GoalsPage() {
             </div>
           )}
         </>
-      )}
-
-      {/* === その他タブ === */}
-      {activeTab === "other" && (
-        <div className="card" style={{ marginBottom: 16 }}>
-          <h2 style={{ marginTop: 0 }}>その他</h2>
-          <div className="small" style={{ marginBottom: 8 }}>
-            課金状態や設定などをまとめる予定の画面です。
-          </div>
-
-          {/* 課金状態プレースホルダ */}
-          <div
-            style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              border: "1px solid rgba(0,0,0,0.08)",
-              marginBottom: 12,
-            }}
-          >
-            <div className="small muted">課金ステータス</div>
-            <div className="small">未実装（Coming Soon）</div>
-          </div>
-
-          <button
-            className="primary"
-            style={{ marginBottom: 12 }}
-            onClick={() => alert("課金処理はまだ実装していません")}
-          >
-            課金プランを購入（ダミー）
-          </button>
-
-          <hr style={{ margin: "12px 0" }} />
-
-          <button onClick={logout}>ログアウト</button>
-        </div>
       )}
     </div>
   );
