@@ -240,10 +240,6 @@ export default function GoalsPage() {
  function logout() {
   clearToken();
 
-  // 👇 追加
-  localStorage.removeItem("todo-money:schedules:v1");
-  localStorage.removeItem("todo-money:scheduleHistory:v1");
-
   nav("/login", { replace: true });
 }
 
