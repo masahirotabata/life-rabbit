@@ -53,18 +53,25 @@ const fetchJson = request;
 
 export function useApi() {
   return {
-    get: <T = any>(path: string) => request<T>(path),
+    get: async <T = any>(path: string) => {
+      const data = await request<T>(path);
+      return { data };
+    },
 
-    post: <T = any>(path: string, body?: any) =>
-      request<T>(path, {
+    post: async <T = any>(path: string, body?: any) => {
+      const data = await request<T>(path, {
         method: "POST",
         body: body === undefined ? undefined : JSON.stringify(body),
-      }),
+      });
+      return { data };
+    },
 
-    delete: <T = any>(path: string) =>
-      request<T>(path, {
+    delete: async <T = any>(path: string) => {
+      const data = await request<T>(path, {
         method: "DELETE",
-      }),
+      });
+      return { data };
+    },
   };
 }
 
