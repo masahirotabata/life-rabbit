@@ -10,8 +10,7 @@ export function setToken(token: string) {
   localStorage.setItem(TOKEN_KEY, token);
 }
 export function clearToken() {
-  localStorage.clear();
-  sessionStorage.clear();
+  localStorage.removeItem(TOKEN_KEY);
 }
 
 // =====================
