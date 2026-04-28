@@ -1,81 +1,189 @@
-// src/api.ts
+// =====================
+// Token
+// =====================
+const TOKEN_KEY = "todoMoneyToken";
 
-// axios は使わず、fetch ベースのシンプルなクライアントにします。
+export function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+export function setToken(token: string) {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+export function clearToken() {
+  localStorage.clear();
+  sessionStorage.clear();
+}
 
-export type ApiResponse<T> = {
-    data: T;
-  };
-  
-  export type ApiClient = {
-    get<T = unknown>(path: string): Promise<ApiResponse<T>>;
-    post<T = unknown>(path: string, body?: unknown): Promise<ApiResponse<T>>;
-    delete<T = unknown>(path: string): Promise<ApiResponse<T>>;
-  };
-  
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
-  
-  async function request<T>(
-    method: "GET" | "POST" | "DELETE",
-    path: string,
-    body?: unknown
-  ): Promise<ApiResponse<T>> {
-    const token = localStorage.getItem("todo-money:token");
-  
-    const headers: Record<string, string> = {
-      Accept: "application/json",
-    };
-  
-    let fetchBody: BodyInit | undefined = undefined;
-  
-    if (body !== undefined) {
-      headers["Content-Type"] = "application/json";
-      fetchBody = JSON.stringify(body);
+// =====================
+// Request helper
+// =====================
+export type ApiError = { status: number; message: string };
+
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const token = getToken();
+
+  const res = await fetch(path, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init.headers ?? {}),
+    },
+  });
+
+  if (!res.ok) {
+    let msg = `${res.status} ${res.statusText}`;
+    try {
+      const data = await res.json();
+      msg = data?.message ?? data?.error ?? msg;
+    } catch {
+      // JSONじゃない場合はそのまま
     }
-  
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-  
-    const res = await fetch(`${BASE_URL}${path}`, {
-      method,
-      headers,
-      body: fetchBody,
-    });
-  
-    if (!res.ok) {
-      let message = `HTTP ${res.status}`;
-  
-      // サーバー側が { message: "..."} を返している場合はそれをエラーメッセージに採用
-      try {
-        const errJson = await res.json();
-        if (errJson && typeof errJson === "object" && "message" in errJson) {
-          message = String((errJson as any).message);
-        }
-      } catch {
-        // JSON でない場合は無視
-      }
-  
-      throw new Error(message);
-    }
-  
-    const json = (await res.json()) as T;
-    return { data: json };
+    throw { status: res.status, message: msg } as ApiError;
   }
-  
-  /**
-   * 各ページで使う API フック
-   *
-   * 使用例：
-   *   const api = useApi();
-   *   const res = await api.get<Summary>("/api/me/summary");
-   *   setS(res.data);
-   */
-  export function useApi(): ApiClient {
-    return {
-      get:  <T = unknown>(path: string) => request<T>("GET", path),
-      post: <T = unknown>(path: string, body?: unknown) =>
-        request<T>("POST", path, body),
-      delete: <T = unknown>(path: string) => request<T>("DELETE", path),
-    };
-  }
-  
+
+  // 204 No Content
+  if (res.status === 204) return undefined as T;
+
+  return (await res.json()) as T;
+}
+
+// 互換用（あなたの既存コードが fetchJson を呼ぶならこれでOK）
+const fetchJson = request;
+
+// =====================
+// Types
+// =====================
+export type GoalListItem = {
+  id: number;
+  title: string;
+  annualIncome: number;
+  daysPerYear: number;
+  achieved: boolean;
+  taskCount: number;
+  completedTaskCount: number;
+  perTaskReward: number;
+  earnedAmount: number;
+};
+
+export type TaskItem = {
+  id: number;
+  goalId: number;
+  title: string;
+  completed: boolean;
+  completedAt: string | null;
+};
+
+export type TagItem = { id: number; name: string; color?: string };
+
+export type CalendarItem = {
+  taskId: number;
+  title: string;
+  memo?: string;
+  date: string; // yyyy-MM-dd
+  completed: boolean;
+  tags: TagItem[];
+};
+
+// =====================
+// Auth
+// =====================
+export async function register(email: string, password: string) {
+  return request<{ id: number; email: string }>("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function login(email: string, password: string) {
+  return request<{ token: string }>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+// =====================
+// Goals / Tasks
+// =====================
+export async function listGoals() {
+  return request<GoalListItem[]>("/api/goals");
+}
+
+export async function createGoal(title: string, annualIncome: number) {
+  return request<GoalListItem>("/api/goals", {
+    method: "POST",
+    body: JSON.stringify({ title, annualIncome }),
+  });
+}
+
+export async function listTasks(goalId: number) {
+  return request<TaskItem[]>(`/api/goals/${goalId}/tasks`);
+}
+
+export async function addTask(goalId: number, title: string) {
+  return request<TaskItem>(`/api/goals/${goalId}/tasks`, {
+    method: "POST",
+    body: JSON.stringify({ title }),
+  });
+}
+
+export async function completeTask(taskId: number) {
+  return request<{ rewardAmount: number; currency: string }>(
+    `/api/tasks/${taskId}/complete`,
+    { method: "POST" }
+  );
+}
+
+// =====================
+// Tags / Calendar / Schedule / History
+// =====================
+export async function listTags(): Promise<TagItem[]> {
+  return fetchJson("/api/tags");
+}
+
+export async function createTag(name: string, color?: string): Promise<TagItem> {
+  return fetchJson("/api/tags", {
+    method: "POST",
+    body: JSON.stringify({ name, color }),
+  });
+}
+
+export async function setTaskTags(taskId: number, tagIds: number[]): Promise<any> {
+  return fetchJson(`/api/tasks/${taskId}/tags`, {
+    method: "POST",
+    body: JSON.stringify({ tagIds }),
+  });
+}
+
+export async function calendar(from: string, to: string): Promise<CalendarItem[]> {
+  return fetchJson(
+    `/api/calendar?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+  );
+}
+
+export async function upsertSchedule(body: {
+  taskId: number;
+  type: "DATE" | "RANGE" | "WEEKLY";
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+  daysOfWeekMask?: number;
+}): Promise<any> {
+  return fetchJson("/api/schedules/upsert", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function completeOccurrence(taskId: number, date: string): Promise<void> {
+  await fetchJson("/api/complete", {
+    method: "POST",
+    body: JSON.stringify({ taskId, date }),
+  });
+}
+
+export async function history(from: string, to: string): Promise<any[]> {
+  return fetchJson(
+    `/api/history?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+  );
+}
