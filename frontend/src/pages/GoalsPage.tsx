@@ -8,7 +8,7 @@ import {
   addTask,
   listTasks,
   completeTask,
-  goalListItem,
+  GoalListItem,
   TaskItem,
 } from "../lib/api";
 
@@ -83,6 +83,7 @@ function toYMD(d: Date) {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
+type TabId = "todo" | "calendar" | "history" | "other";
 type TabId = "todo" | "calendar" | "history";
 
 export default function GoalsPage() {
@@ -158,7 +159,7 @@ export default function GoalsPage() {
   useEffect(() => {
     (async () => {
       const map: Record<number, TaskItem[]> = {};
-      for (const g of Goals) {
+      for (const g of goals) {
         try {
           const ts = await listTasks(g.id);
           map[g.id] = ts;
@@ -168,21 +169,21 @@ export default function GoalsPage() {
       }
       setTasksByGoal(map);
     })();
-  }, [Goals]);
+  }, [goals]);
 
   // 合計獲得 → 雨
   useEffect(() => {
-    const total = Goals.reduce(
+    const total = goals.reduce(
       (sum: number, g: any) => sum + (g.earnedAmount ?? g.earned ?? 0),
       0
     );
     if (total > prevTotalEarnedRef.current) setRainSeed(Date.now());
     prevTotalEarnedRef.current = total;
-  }, [Goals]);
+  }, [goals]);
 
   const totalEarned = useMemo(() => {
-    return Goals.reduce((sum, g: any) => sum + (g.earnedAmount ?? 0), 0);
-  }, [Goals]);
+    return goals.reduce((sum, g: any) => sum + (g.earnedAmount ?? 0), 0);
+  }, [goals]);
 
   // schedules 永続化
   useEffect(() => {
@@ -378,17 +379,17 @@ export default function GoalsPage() {
 
   // ★ カレンダー左用：全 Goal の未完了タスクをフラット化
   const dragTaskList = useMemo(() => {
-    const items: { goalId: number; GoalTitle: string; task: TaskItem }[] = [];
-    for (const g of Goals) {
+    const items: { goalId: number; goalTitle: string; task: TaskItem }[] = [];
+    for (const g of goals) {
       const ts = tasksByGoal[g.id] ?? [];
       ts
         .filter((t) => !t.completed)
         .forEach((t) =>
-          items.push({ goalId: g.id, GoalTitle: g.title, task: t })
+          items.push({ goalId: g.id, goalTitle: g.title, task: t })
         );
     }
     return items;
-  }, [Goals, tasksByGoal]);
+  }, [goals, tasksByGoal]);
 
   // ★ スプラッシュ表示中は lifeRabbit 画面だけ表示
   if (showSplash) {
@@ -430,6 +431,7 @@ export default function GoalsPage() {
               { id: "todo", label: "ToDo" },
               { id: "calendar", label: "カレンダー" },
               { id: "history", label: "履歴" },
+              { id: "other", label: "その他" },
             ] as { id: TabId; label: string }[]
           ).map((tab) => (
             <button
@@ -483,8 +485,8 @@ export default function GoalsPage() {
 
           {error && <div className="error">{error}</div>}
 
-          {/* Goals & 詳細タスク */}
-          {Goals.map((g: any) => (
+          {/* goals & 詳細タスク */}
+          {goals.map((g: any) => (
             <div className="card" key={g.id} style={{ marginBottom: 14 }}>
               <div className="row-between">
                 <div>
@@ -631,7 +633,7 @@ export default function GoalsPage() {
                     gap: 6,
                   }}
                 >
-                  {dragTaskList.map(({ goalId, GoalTitle, task }) => (
+                  {dragTaskList.map(({ goalId, goalTitle, task }) => (
                     <div
                       key={`${goalId}-${task.id}`}
                       style={{
@@ -657,7 +659,7 @@ export default function GoalsPage() {
                         );
                         e.dataTransfer.effectAllowed = "copy";
                       }}
-                      title={`${GoalTitle} / ${task.title}`}
+                      title={`${goalTitle} / ${task.title}`}
                     >
                       <div
                         style={{
@@ -670,7 +672,7 @@ export default function GoalsPage() {
                       >
                         {task.title}
                       </div>
-                      <div className="small muted">{GoalTitle}</div>
+                      <div className="small muted">{goalTitle}</div>
                     </div>
                   ))}
                 </div>
@@ -744,6 +746,41 @@ export default function GoalsPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* === その他タブ === */}
+      {activeTab === "other" && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <h2 style={{ marginTop: 0 }}>その他</h2>
+          <div className="small" style={{ marginBottom: 8 }}>
+            課金状態や設定などをまとめる予定の画面です。
+          </div>
+
+          {/* 課金状態プレースホルダ */}
+          <div
+            style={{
+              padding: "10px 12px",
+              borderRadius: 10,
+              border: "1px solid rgba(0,0,0,0.08)",
+              marginBottom: 12,
+            }}
+          >
+            <div className="small muted">課金ステータス</div>
+            <div className="small">未実装（Coming Soon）</div>
+          </div>
+
+          <button
+            className="primary"
+            style={{ marginBottom: 12 }}
+            onClick={() => alert("課金処理はまだ実装していません")}
+          >
+            課金プランを購入（ダミー）
+          </button>
+
+          <hr style={{ margin: "12px 0" }} />
+
+          <button onClick={logout}>ログアウト</button>
+        </div>
       )}
     </div>
   );
