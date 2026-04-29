@@ -76,8 +76,8 @@ export default function LoginPage() {
   const from = loc.state?.from ?? "/goals";
 
   const [mode, setMode] = useState<"login" | "register">("login");
-  const [email, setEmail] = useState("test@example.com");
-  const [password, setPassword] = useState("pass1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -176,12 +176,6 @@ export default function LoginPage() {
           </div>
 
           {error && <div className="error">{error}</div>}
-
-          <div className="small" style={{ marginTop: 4 }}>
-            ※ 409 は「すでに登録済み」です（エラーじゃなく案内）
-            <br />
-            ※ 現在のAPI: <code>{API_BASE}</code>
-          </div>
         </div>
       </div>
     </div>
