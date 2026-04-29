@@ -67,7 +67,7 @@ function loadHistory(): ScheduleHistoryItem[] {
   }
 }
 
-function saveHistory(list: any[]) {
+function saveHistory(list: ScheduleHistoryItem[]) {
   localStorage.setItem(scheduleHistoryKey(), JSON.stringify(list));
 }
 
