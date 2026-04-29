@@ -91,7 +91,7 @@ export default function GoalsPage() {
   // ★ スプラッシュ（lifeRabbit）
   const [showSplash, setShowSplash] = useState(true);
 
-  const [Goals, setGoals] = useState<GoalListItem[]>([]);
+  const [goals, setGoals] = useState<GoalListItem[]>([]);
   const [tasksByGoal, setTasksByGoal] = useState<Record<number, TaskItem[]>>({});
   const [error, setError] = useState<string | null>(null);
 
