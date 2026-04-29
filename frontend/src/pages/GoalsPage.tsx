@@ -1,14 +1,14 @@
-// src/pages/GoalsPage.tsx
+// src/pages/目標sPage.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   clearToken,
-  listGoals,
-  createGoal,
+  list目標s,
+  create目標,
   addTask,
   listTasks,
   completeTask,
-  GoalListItem,
+  目標ListItem,
   TaskItem,
 } from "../lib/api";
 
@@ -85,14 +85,14 @@ function toYMD(d: Date) {
 
 type TabId = "todo" | "calendar" | "history";
 
-export default function GoalsPage() {
+export default function 目標sPage() {
   const nav = useNavigate();
 
   // ★ スプラッシュ（lifeRabbit）
   const [showSplash, setShowSplash] = useState(true);
 
-  const [goals, setGoals] = useState<GoalListItem[]>([]);
-  const [tasksByGoal, setTasksByGoal] = useState<Record<number, TaskItem[]>>({});
+  const [目標s, set目標s] = useState<目標ListItem[]>([]);
+  const [tasksBy目標, setTasksBy目標] = useState<Record<number, TaskItem[]>>({});
   const [error, setError] = useState<string | null>(null);
 
   const [newTitle, setNewTitle] = useState("副業で月5万");
@@ -116,7 +116,7 @@ export default function GoalsPage() {
   const [modalClickedDate, setModalClickedDate] = useState<string | null>(null);
 
   // Show Tasks 開閉
-  const [openGoals, setOpenGoals] = useState<Record<number, boolean>>({});
+  const [open目標s, setOpen目標s] = useState<Record<number, boolean>>({});
 
   // ★ 履歴
   const [history, setHistory] = useState<ScheduleHistoryItem[]>(() =>
@@ -132,33 +132,33 @@ export default function GoalsPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  async function refreshGoals() {
-    const g = await listGoals();
-    setGoals(g);
+  async function refresh目標s() {
+    const g = await list目標s();
+    set目標s(g);
   }
 
-  async function loadTasks(goalId: number) {
-    const t = await listTasks(goalId);
-    setTasksByGoal((m) => ({ ...m, [goalId]: t }));
+  async function loadTasks(目標Id: number) {
+    const t = await listTasks(目標Id);
+    setTasksBy目標((m) => ({ ...m, [目標Id]: t }));
   }
 
-  // 初回：Goal 一覧だけ読み込み
+  // 初回：目標 一覧だけ読み込み
   useEffect(() => {
     (async () => {
       try {
         setError(null);
-        await refreshGoals();
+        await refresh目標s();
       } catch (e: any) {
         setError(e?.message ?? "読み込みに失敗しました");
       }
     })();
   }, []);
 
-  // ★ Goal が変わったら、全 Goal のタスクをまとめて取得
+  // ★ 目標 が変わったら、全 目標 のタスクをまとめて取得
   useEffect(() => {
     (async () => {
       const map: Record<number, TaskItem[]> = {};
-      for (const g of goals) {
+      for (const g of 目標s) {
         try {
           const ts = await listTasks(g.id);
           map[g.id] = ts;
@@ -166,23 +166,23 @@ export default function GoalsPage() {
           map[g.id] = [];
         }
       }
-      setTasksByGoal(map);
+      setTasksBy目標(map);
     })();
-  }, [goals]);
+  }, [目標s]);
 
   // 合計獲得 → 雨
   useEffect(() => {
-    const total = goals.reduce(
+    const total = 目標s.reduce(
       (sum: number, g: any) => sum + (g.earnedAmount ?? g.earned ?? 0),
       0
     );
     if (total > prevTotalEarnedRef.current) setRainSeed(Date.now());
     prevTotalEarnedRef.current = total;
-  }, [goals]);
+  }, [目標s]);
 
   const totalEarned = useMemo(() => {
-    return goals.reduce((sum, g: any) => sum + (g.earnedAmount ?? 0), 0);
-  }, [goals]);
+    return 目標s.reduce((sum, g: any) => sum + (g.earnedAmount ?? 0), 0);
+  }, [目標s]);
 
   // schedules 永続化
   useEffect(() => {
@@ -194,43 +194,43 @@ export default function GoalsPage() {
     saveHistory(history);
   }, [history]);
 
-  async function onCreateGoal() {
+  async function onCreate目標() {
     setError(null);
     try {
-      await createGoal(newTitle, Number(newIncome));
-      await refreshGoals();
+      await create目標(newTitle, Number(newIncome));
+      await refresh目標s();
     } catch (e: any) {
-      setError(e?.message ?? "Goal作成に失敗しました");
+      setError(e?.message ?? "目標作成に失敗しました");
     }
   }
 
-  async function onAddTask(goalId: number) {
+  async function onAddTask(目標Id: number) {
     const title = prompt("タスク名を入力してください");
     if (!title) return;
     setError(null);
     try {
-      await addTask(goalId, title);
-      await refreshGoals();
-      await loadTasks(goalId);
+      await addTask(目標Id, title);
+      await refresh目標s();
+      await loadTasks(目標Id);
     } catch (e: any) {
       setError(e?.message ?? "タスク追加に失敗しました");
     }
   }
 
-  async function onComplete(taskId: number, goalId: number) {
+  async function onComplete(taskId: number, 目標Id: number) {
     setError(null);
     try {
       await completeTask(taskId);
-      await refreshGoals();
-      await loadTasks(goalId);
-      // ★ ここで「Goalタスクの履歴」にも足すのは次ステップでOK
+      await refresh目標s();
+      await loadTasks(目標Id);
+      // ★ ここで「目標タスクの履歴」にも足すのは次ステップでOK
     } catch (e: any) {
       setError(e?.message ?? "完了処理に失敗しました");
     }
   }
 
   // ★ 詳細タスクのタイトル編集（フロントのみ）
-  function onEditTask(task: TaskItem, goalId: number) {
+  function onEditTask(task: TaskItem, 目標Id: number) {
     const next = prompt("タスク名を編集", task.title);
     if (next == null) return;
     const trimmed = next.trim();
@@ -239,9 +239,9 @@ export default function GoalsPage() {
       return;
     }
 
-    setTasksByGoal((prev) => ({
+    setTasksBy目標((prev) => ({
       ...prev,
-      [goalId]: (prev[goalId] ?? []).map((t) =>
+      [目標Id]: (prev[目標Id] ?? []).map((t) =>
         t.id === task.id ? { ...t, title: trimmed } : t
       ),
     }));
@@ -272,7 +272,7 @@ export default function GoalsPage() {
       {
         title: task.title,
         memo: "",
-        taskRef: { goalId: task.goalId, taskId: task.taskId },
+        taskRef: { 目標Id: task.目標Id, taskId: task.taskId },
       },
       toYMD(date)
     );
@@ -307,20 +307,20 @@ export default function GoalsPage() {
   }
 
   // ★ Show Tasks 開閉（ToDoタブ用）
-  async function handleToggleTasks(goalId: number) {
+  async function handleToggleTasks(目標Id: number) {
     setError(null);
-    const isOpen = openGoals[goalId];
+    const isOpen = open目標s[目標Id];
 
     if (isOpen) {
-      setOpenGoals((m) => ({ ...m, [goalId]: false }));
+      setOpen目標s((m) => ({ ...m, [目標Id]: false }));
       return;
     }
 
     try {
-      if (!tasksByGoal[goalId]) {
-        await loadTasks(goalId);
+      if (!tasksBy目標[目標Id]) {
+        await loadTasks(目標Id);
       }
-      setOpenGoals((m) => ({ ...m, [goalId]: true }));
+      setOpen目標s((m) => ({ ...m, [目標Id]: true }));
     } catch (e: any) {
       setError(e?.message ?? "タスク読み込みに失敗しました");
     }
@@ -376,19 +376,19 @@ export default function GoalsPage() {
     }
   }
 
-  // ★ カレンダー左用：全 Goal の未完了タスクをフラット化
+  // ★ カレンダー左用：全 目標 の未完了タスクをフラット化
   const dragTaskList = useMemo(() => {
-    const items: { goalId: number; goalTitle: string; task: TaskItem }[] = [];
-    for (const g of goals) {
-      const ts = tasksByGoal[g.id] ?? [];
+    const items: { 目標Id: number; 目標Title: string; task: TaskItem }[] = [];
+    for (const g of 目標s) {
+      const ts = tasksBy目標[g.id] ?? [];
       ts
         .filter((t) => !t.completed)
         .forEach((t) =>
-          items.push({ goalId: g.id, goalTitle: g.title, task: t })
+          items.push({ 目標Id: g.id, 目標Title: g.title, task: t })
         );
     }
     return items;
-  }, [goals, tasksByGoal]);
+  }, [目標s, tasksBy目標]);
 
   // ★ スプラッシュ表示中は lifeRabbit 画面だけ表示
   if (showSplash) {
@@ -408,7 +408,7 @@ export default function GoalsPage() {
 
       {/* ヘッダー */}
       <div className="row-between">
-        <h1>Goals</h1>
+        <h1>目標s</h1>
         <button onClick={logout}>Logout</button>
       </div>
 
@@ -457,9 +457,9 @@ export default function GoalsPage() {
       {/* === ToDo タブ === */}
       {activeTab === "todo" && (
         <>
-          {/* 新規Goal */}
+          {/* 新規目標 */}
           <div className="card" style={{ marginBottom: 16 }}>
-            <h2 style={{ marginTop: 0 }}>新規Goal</h2>
+            <h2 style={{ marginTop: 0 }}>新規目標</h2>
 
             <label>Title</label>
             <input
@@ -475,7 +475,7 @@ export default function GoalsPage() {
             />
 
             <div style={{ marginTop: 14 }}>
-              <button className="primary" onClick={onCreateGoal}>
+              <button className="primary" onClick={onCreate目標}>
                 Create
               </button>
             </div>
@@ -483,8 +483,8 @@ export default function GoalsPage() {
 
           {error && <div className="error">{error}</div>}
 
-          {/* goals & 詳細タスク */}
-          {goals.map((g: any) => (
+          {/* 目標s & 詳細タスク */}
+          {目標s.map((g: any) => (
             <div className="card" key={g.id} style={{ marginBottom: 14 }}>
               <div className="row-between">
                 <div>
@@ -503,19 +503,19 @@ export default function GoalsPage() {
                 <div className="row">
                   <button onClick={() => onAddTask(g.id)}>+ Task</button>
                   <button onClick={() => handleToggleTasks(g.id)}>
-                    {openGoals[g.id] ? "Hide Tasks" : "Show Tasks"}
+                    {open目標s[g.id] ? "Hide Tasks" : "Show Tasks"}
                   </button>
                 </div>
               </div>
 
               {/* 詳細タスク */}
-              {openGoals[g.id] && tasksByGoal[g.id] && (
+              {open目標s[g.id] && tasksBy目標[g.id] && (
                 <>
                   <hr />
-                  {tasksByGoal[g.id].length === 0 ? (
+                  {tasksBy目標[g.id].length === 0 ? (
                     <div className="small">タスクがありません</div>
                   ) : (
-                    tasksByGoal[g.id].map((t) => (
+                    tasksBy目標[g.id].map((t) => (
                       <div key={t.id} className="task">
                         <div style={{ flex: 1 }}>
                           <div
@@ -528,7 +528,7 @@ export default function GoalsPage() {
                             onDragStart={(e) => {
                               const payload: DragTaskPayload = {
                                 kind: "task",
-                                goalId: g.id,
+                                目標Id: g.id,
                                 taskId: t.id,
                                 title: t.title,
                               };
@@ -631,9 +631,9 @@ export default function GoalsPage() {
                     gap: 6,
                   }}
                 >
-                  {dragTaskList.map(({ goalId, goalTitle, task }) => (
+                  {dragTaskList.map(({ 目標Id, 目標Title, task }) => (
                     <div
-                      key={`${goalId}-${task.id}`}
+                      key={`${目標Id}-${task.id}`}
                       style={{
                         padding: "6px 8px",
                         borderRadius: 10,
@@ -647,7 +647,7 @@ export default function GoalsPage() {
                       onDragStart={(e) => {
                         const payload: DragTaskPayload = {
                           kind: "task",
-                          goalId,
+                          目標Id,
                           taskId: task.id,
                           title: task.title,
                         };
@@ -657,7 +657,7 @@ export default function GoalsPage() {
                         );
                         e.dataTransfer.effectAllowed = "copy";
                       }}
-                      title={`${goalTitle} / ${task.title}`}
+                      title={`${目標Title} / ${task.title}`}
                     >
                       <div
                         style={{
@@ -670,7 +670,7 @@ export default function GoalsPage() {
                       >
                         {task.title}
                       </div>
-                      <div className="small muted">{goalTitle}</div>
+                      <div className="small muted">{目標Title}</div>
                     </div>
                   ))}
                 </div>
