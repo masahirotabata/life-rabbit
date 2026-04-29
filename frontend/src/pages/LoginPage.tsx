@@ -114,13 +114,13 @@ export default function LoginPage() {
       >
         <div className="row-between" style={{ marginBottom: 16 }}>
           <h2 style={{ margin: 0 }}>
-            {mode === "login" ? "Login" : "Create account"}
+            {mode === "login" ? "ログイン" : "アカウント作成"}
           </h2>
           <button
             onClick={() => setMode(mode === "login" ? "register" : "login")}
             disabled={busy}
           >
-            {mode === "login" ? "Create account" : "Back to login"}
+            {mode === "login" ? "アカウント作成" : "ログインに戻る"}
           </button>
         </div>
 
