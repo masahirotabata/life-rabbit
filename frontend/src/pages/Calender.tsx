@@ -12,23 +12,15 @@ export type ScheduleEvent = {
   id: string;
   title: string;
   memo?: string;
-  startDate: string; // yyyy-mm-dd
-  endDate: string; // yyyy-mm-dd
-  weekdays: boolean[]; // [Sun..Sat] length=7
+  startDate: string;
+  endDate: string;
+  weekdays: boolean[];
   taskRef?: { goalId: number; taskId: number };
-
-  // optional time
-  startTime?: string; // "HH:MM"
-  endTime?: string; // "HH:MM"
-
-  // one-shot (単発)
+  startTime?: string;
+  endTime?: string;
   oneShot?: boolean;
-
-  // tags (paid feature etc)
   tags?: string[];
-
-  // ✅ one-day completion
-  completedDates?: string[]; // ["2025-12-15", ...]
+  completedDates?: string[];
 };
 
 type Props = {
@@ -41,16 +33,20 @@ type Props = {
 function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
+
 function toYMD(d: Date) {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
+
 function ymdToNum(ymd: string) {
   const [y, m, d] = ymd.split("-").map((x) => parseInt(x, 10));
   return y * 10000 + m * 100 + d;
 }
+
 function sameOrAfter(a: string, b: string) {
   return ymdToNum(a) >= ymdToNum(b);
 }
+
 function sameOrBefore(a: string, b: string) {
   return ymdToNum(a) <= ymdToNum(b);
 }
@@ -72,6 +68,7 @@ function buildMonthGrid(base: Date) {
     d.setDate(start.getDate() + i);
     cells.push(d);
   }
+
   return cells;
 }
 
@@ -85,18 +82,15 @@ function hasEventOnDate(ev: ScheduleEvent, date: Date): boolean {
   if (!sameOrAfter(key, ev.startDate)) return false;
   if (!sameOrBefore(key, ev.endDate)) return false;
 
-  const dow = date.getDay();
-  return !!weekdays[dow];
+  return !!weekdays[date.getDay()];
 }
 
 function getEventsForDate(events: ScheduleEvent[], date: Date): ScheduleEvent[] {
   return events.filter((ev) => hasEventOnDate(ev, date));
 }
 
-// ✅ 4文字まで（絵文字も考慮して Array.from）
 function short4(s: string) {
-  const chars = Array.from(s ?? "");
-  return chars.slice(0, 4).join("");
+  return Array.from(s ?? "").slice(0, 4).join("");
 }
 
 export default function Calender(props: Props) {
@@ -108,62 +102,81 @@ export default function Calender(props: Props) {
     return d;
   });
 
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const [wrapW, setWrapW] = useState(0);
+
   const cells = useMemo(() => buildMonthGrid(base), [base]);
 
   const eventsByDate = useMemo(() => {
     const map: Record<string, ScheduleEvent[]> = {};
+
     for (const d of cells) {
       const key = toYMD(d);
       map[key] = getEventsForDate(events, d);
     }
+
     return map;
   }, [cells, events]);
-
-  // ===== Responsive sizing =====
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const [wrapW, setWrapW] = useState(0);
 
   useEffect(() => {
     const el = wrapperRef.current;
     if (!el) return;
 
-    // ✅ ResizeObserver が無い環境でも落ちないように保険
+    const updateWidth = () => {
+      setWrapW(el.getBoundingClientRect().width);
+    };
+
+    updateWidth();
+
     const ro =
       typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(() => {
-            setWrapW(el.getBoundingClientRect().width);
-          })
+        ? new ResizeObserver(updateWidth)
         : null;
 
     ro?.observe(el);
-    setWrapW(el.getBoundingClientRect().width);
-
-    const onResize = () => setWrapW(el.getBoundingClientRect().width);
-    window.addEventListener("resize", onResize);
+    window.addEventListener("resize", updateWidth);
 
     return () => {
       ro?.disconnect();
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener("resize", updateWidth);
     };
   }, []);
 
-  const GAP = wrapW && wrapW < 520 ? 4 : 6;
-
-  const cellW = useMemo(() => {
-    if (!wrapW) return 0;
-    const inner = Math.max(0, wrapW - GAP * 6);
-    const w = Math.floor(inner / 7);
-    return Math.max(44, Math.min(110, w));
-  }, [wrapW, GAP]);
-
-  const isCompact = cellW > 0 && cellW < 70;
+  const isCompact = wrapW > 0 && wrapW < 520;
+  const gap = isCompact ? 4 : 6;
   const weekNames = ["日", "月", "火", "水", "木", "金", "土"];
 
+  const gridStyle: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+    gap,
+    width: "100%",
+    maxWidth: "100%",
+    boxSizing: "border-box",
+  };
+
   return (
-    <div>
-      {/* 年月ナビ */}
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+    <div
+      style={{
+        width: "100%",
+        maxWidth: "100%",
+        overflowX: "hidden",
+        boxSizing: "border-box",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 8,
+          width: "100%",
+          boxSizing: "border-box",
+        }}
+      >
         <button
+          type="button"
           onClick={() => {
             const d = new Date(base);
             d.setMonth(d.getMonth() - 1);
@@ -172,8 +185,20 @@ export default function Calender(props: Props) {
         >
           ◀
         </button>
-        <div style={{ fontWeight: 700 }}>{monthLabel(base)}</div>
+
+        <div
+          style={{
+            fontWeight: 700,
+            minWidth: 110,
+            textAlign: "center",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {monthLabel(base)}
+        </div>
+
         <button
+          type="button"
           onClick={() => {
             const d = new Date(base);
             d.setMonth(d.getMonth() + 1);
@@ -184,18 +209,8 @@ export default function Calender(props: Props) {
         </button>
       </div>
 
-      {/* 本体 */}
-      <div ref={wrapperRef} style={{ width: "100%" }}>
-        {/* 曜日ヘッダ */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: cellW > 0 ? `repeat(7, ${cellW}px)` : "repeat(7, 1fr)",
-            gap: GAP,
-            marginBottom: GAP,
-            justifyContent: "space-between",
-          }}
-        >
+      <div ref={wrapperRef} style={{ width: "100%", maxWidth: "100%" }}>
+        <div style={{ ...gridStyle, marginBottom: gap }}>
           {weekNames.map((w) => (
             <div
               key={w}
@@ -203,6 +218,7 @@ export default function Calender(props: Props) {
                 fontSize: isCompact ? 10 : 12,
                 opacity: 0.7,
                 textAlign: "center",
+                minWidth: 0,
               }}
             >
               {w}
@@ -210,15 +226,7 @@ export default function Calender(props: Props) {
           ))}
         </div>
 
-        {/* 日付セル */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: cellW > 0 ? `repeat(7, ${cellW}px)` : "repeat(7, 1fr)",
-            gap: GAP,
-            justifyContent: "space-between",
-          }}
-        >
+        <div style={gridStyle}>
           {cells.map((d) => {
             const key = toYMD(d);
             const inMonth = d.getMonth() === base.getMonth();
@@ -233,32 +241,44 @@ export default function Calender(props: Props) {
                 }}
                 onDrop={(e) => {
                   if (!onDropTask) return;
+
                   e.preventDefault();
+
                   const raw = e.dataTransfer.getData("application/json");
                   if (!raw) return;
+
                   try {
                     const parsed = JSON.parse(raw) as DragTaskPayload;
-                    if (parsed?.kind === "task") onDropTask(d, parsed);
+                    if (parsed?.kind === "task") {
+                      onDropTask(d, parsed);
+                    }
                   } catch {
                     // ignore
                   }
                 }}
                 style={{
                   border: "1px solid rgba(0,0,0,0.08)",
-                  borderRadius: 10,
-                  padding: isCompact ? 5 : 8,
-                  minHeight: isCompact ? 64 : 80,
+                  borderRadius: isCompact ? 8 : 10,
+                  padding: isCompact ? 4 : 8,
+                  minHeight: isCompact ? 58 : 80,
                   cursor: "pointer",
                   background: inMonth ? "white" : "rgba(0,0,0,0.03)",
                   boxSizing: "border-box",
                   display: "flex",
                   flexDirection: "column",
-                  overflow: "hidden", // ✅ セルを広げない
+                  overflow: "hidden",
+                  minWidth: 0,
                 }}
                 title="クリックで追加 / タスクをドロップで追加"
               >
-                {/* 日付 */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    minWidth: 0,
+                  }}
+                >
                   <div
                     style={{
                       fontSize: isCompact ? 10 : 12,
@@ -270,7 +290,6 @@ export default function Calender(props: Props) {
                   </div>
                 </div>
 
-                {/* イベント一覧 */}
                 <div
                   style={{
                     marginTop: isCompact ? 4 : 6,
@@ -303,7 +322,9 @@ export default function Calender(props: Props) {
                           fontSize: isCompact ? 9 : 11,
                           padding: isCompact ? "3px 4px" : "4px 6px",
                           borderRadius: 8,
-                          background: completed ? "rgba(0,0,0,0.15)" : "rgba(0,0,0,0.06)",
+                          background: completed
+                            ? "rgba(0,0,0,0.15)"
+                            : "rgba(0,0,0,0.06)",
                           textDecoration: completed ? "line-through" : "none",
                           opacity: completed ? 0.55 : 1,
                           cursor: "pointer",
@@ -312,11 +333,22 @@ export default function Calender(props: Props) {
                           alignItems: "flex-start",
                           gap: 1,
                           overflow: "hidden",
+                          minWidth: 0,
                         }}
                         title={ev.memo ? `${ev.title}\n${ev.memo}` : ev.title}
                       >
                         {timeLabel && !isCompact && (
-                          <div style={{ fontSize: 10, opacity: 0.75, lineHeight: 1.1, whiteSpace: "nowrap" }}>
+                          <div
+                            style={{
+                              fontSize: 10,
+                              opacity: 0.75,
+                              lineHeight: 1.1,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              maxWidth: "100%",
+                            }}
+                          >
                             {timeLabel}
                           </div>
                         )}
@@ -339,7 +371,15 @@ export default function Calender(props: Props) {
                   })}
 
                   {list.length > (isCompact ? 2 : 3) && (
-                    <div style={{ fontSize: isCompact ? 9 : 11, opacity: 0.6, whiteSpace: "nowrap" }}>
+                    <div
+                      style={{
+                        fontSize: isCompact ? 9 : 11,
+                        opacity: 0.6,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
                       +{list.length - (isCompact ? 2 : 3)} more
                     </div>
                   )}
