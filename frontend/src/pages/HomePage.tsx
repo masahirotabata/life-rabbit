@@ -10,20 +10,24 @@ import {
   TaskItem,
 } from "../lib/api";
 
-// カレンダーと同じドラッグペイロード型
 import { DragTaskPayload } from "./Calender";
 
 export default function HomePage() {
   const [goals, setGoals] = useState<GoalListItem[]>([]);
   const [annualIncome, setAnnualIncome] = useState("6000000");
   const [title, setTitle] = useState("");
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
-  // goalId ごとのタスク
-  const [tasksByGoal, setTasksByGoal] = useState<Record<number, TaskItem[]>>(
-    {}
-  );
+  const [tasksByGoal, setTasksByGoal] = useState<Record<number, TaskItem[]>>({});
 
-  // Goal & Task をまとめてロード
+  const isIpadLike = windowWidth >= 768;
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const loadAll = async () => {
     const g = await listGoals();
     setGoals(g);
@@ -51,25 +55,22 @@ export default function HomePage() {
     await loadAll();
   };
 
-  const total = goals.reduce(
-    (s, g) => s + (g.earnedAmount ?? 0),
-    0
-  );
+  const total = goals.reduce((s, g) => s + (g.earnedAmount ?? 0), 0);
 
-  // ★ 左カラム用：全 Goal の「未完了タスク」をフラットにしたリスト
-  const dragTaskList = useMemo(
-    () => {
-      const items: { goalId: number; goalTitle: string; task: TaskItem }[] = [];
-      for (const g of goals) {
-        const ts = tasksByGoal[g.id] ?? [];
-        ts.filter((t) => !t.completed).forEach((t) => {
+  const dragTaskList = useMemo(() => {
+    const items: { goalId: number; goalTitle: string; task: TaskItem }[] = [];
+
+    for (const g of goals) {
+      const ts = tasksByGoal[g.id] ?? [];
+      ts
+        .filter((t) => !t.completed)
+        .forEach((t) => {
           items.push({ goalId: g.id, goalTitle: g.title, task: t });
         });
-      }
-      return items;
-    },
-    [goals, tasksByGoal]
-  );
+    }
+
+    return items;
+  }, [goals, tasksByGoal]);
 
   return (
     <div className="container">
@@ -77,16 +78,22 @@ export default function HomePage() {
         style={{
           display: "flex",
           gap: 16,
-          alignItems: "flex-start",
-          flexWrap: "wrap",
+          alignItems: "stretch",
+          flexDirection: isIpadLike ? "column" : "row",
+          width: "100%",
+          maxWidth: "100%",
+          boxSizing: "border-box",
         }}
       >
-        {/* ★ 左：ドラッグ専用タスクリスト */}
+        {/* 左：ドラッグ専用タスクリスト */}
         <div
           style={{
-            flex: "0 0 260px",
-            maxHeight: 520,
+            flex: isIpadLike ? "1 1 auto" : "0 0 260px",
+            width: "100%",
+            maxWidth: "100%",
+            maxHeight: isIpadLike ? "none" : 520,
             overflowY: "auto",
+            boxSizing: "border-box",
           }}
         >
           <div className="card">
@@ -94,6 +101,7 @@ export default function HomePage() {
               <h2 style={{ marginTop: 0, fontSize: 18 }}>タスクリスト</h2>
               <div className="small muted">{dragTaskList.length}件</div>
             </div>
+
             <div className="small muted" style={{ marginBottom: 6 }}>
               カレンダーのある画面にドラッグ＆ドロップしてスケジュール登録
             </div>
@@ -128,6 +136,7 @@ export default function HomePage() {
                         taskId: task.id,
                         title: task.title,
                       };
+
                       e.dataTransfer.setData(
                         "application/json",
                         JSON.stringify(payload)
@@ -155,8 +164,16 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* ★ 右：従来の HomePage コンテンツ */}
-        <div style={{ flex: 1, minWidth: 280 }}>
+        {/* 右：従来の HomePage コンテンツ */}
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            width: "100%",
+            maxWidth: "100%",
+            boxSizing: "border-box",
+          }}
+        >
           <div className="stack">
             <div className="card">
               <div className="row">
@@ -169,6 +186,7 @@ export default function HomePage() {
 
             <div className="card">
               <h2>目標を追加</h2>
+
               <div className="grid2">
                 <input
                   placeholder="例：セキスペ合格"
@@ -181,6 +199,7 @@ export default function HomePage() {
                   onChange={(e) => setAnnualIncome(e.target.value)}
                 />
               </div>
+
               <button className="btn primary" onClick={create}>
                 Add Goal
               </button>
@@ -188,6 +207,7 @@ export default function HomePage() {
 
             <div className="card">
               <h2>目標一覧</h2>
+
               <div className="list">
                 {goals.map((g) => (
                   <Link key={g.id} to={`/goals/${g.id}`} className="item">
@@ -195,12 +215,14 @@ export default function HomePage() {
                       <div className="itemTitle">
                         {g.title} {g.achieved ? "✅" : ""}
                       </div>
+
                       <div className="muted">
                         tasks {g.completedTaskCount}/{g.taskCount} ・ perTask $
                         {g.perTaskReward.toFixed(2)} ・ earned $
                         {g.earnedAmount.toFixed(2)}
                       </div>
                     </div>
+
                     <div className="pill">
                       ${g.annualIncome.toFixed(0)}/y
                     </div>
