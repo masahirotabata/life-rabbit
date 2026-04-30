@@ -1,33 +1,90 @@
-:root { color-scheme: light; }
-body {
+:root {
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
   margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  overflow-x: hidden;
+}
+
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+    "Apple Color Emoji", "Segoe UI Emoji";
   background: #f7f8fb;
   color: #111;
 }
+
 .container {
+  width: 100%;
   max-width: 920px;
   margin: 0 auto;
-  padding: 32px 16px;
+  padding: 24px 16px;
+  overflow-x: hidden;
 }
+
 .card {
+  width: 100%;
+  max-width: 100%;
   background: #fff;
   border: 1px solid #e6e8ef;
   border-radius: 12px;
   padding: 16px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
 }
-.row { display: flex; gap: 12px; align-items: center; }
-.row-between { display:flex; justify-content: space-between; align-items:center; }
-h1 { margin: 0 0 12px; font-size: 40px; }
+
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.row-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+h1 {
+  margin: 0 0 12px;
+  font-size: clamp(28px, 6vw, 40px);
+  line-height: 1.1;
+}
+
+h2 {
+  line-height: 1.2;
+}
+
 input {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   padding: 10px 12px;
   border: 1px solid #d7dbe7;
   border-radius: 10px;
   font-size: 14px;
 }
-label { font-size: 13px; color: #333; display:block; margin: 12px 0 6px; }
+
+label {
+  font-size: 13px;
+  color: #333;
+  display: block;
+  margin: 12px 0 6px;
+}
+
 button {
   padding: 10px 14px;
   border-radius: 10px;
@@ -35,11 +92,14 @@ button {
   background: #fff;
   cursor: pointer;
 }
-button.primary {
+
+button.primary,
+.btn.primary {
   background: #111;
   color: #fff;
   border-color: #111;
 }
+
 .error {
   margin-top: 10px;
   padding: 10px 12px;
@@ -49,10 +109,99 @@ button.primary {
   color: #8a1f1f;
   white-space: pre-wrap;
 }
-.small { color:#666; font-size: 13px; }
-hr { border:0; border-top: 1px solid #eceef5; margin: 14px 0; }
-.task { display:flex; justify-content:space-between; gap: 10px; padding: 10px 0; }
-.badge { font-size:12px; padding: 3px 8px; border:1px solid #e6e8ef; border-radius: 999px; color:#444; }
+
+.small {
+  color: #666;
+  font-size: 13px;
+}
+
+.muted {
+  color: #666;
+}
+
+.big {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid #eceef5;
+  margin: 14px 0;
+}
+
+.task {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  min-width: 0;
+}
+
+.badge {
+  font-size: 12px;
+  padding: 3px 8px;
+  border: 1px solid #e6e8ef;
+  border-radius: 999px;
+  color: #444;
+}
+
+/* 汎用レイアウト */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e6e8ef;
+  border-radius: 12px;
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+}
+
+.itemMain {
+  min-width: 0;
+}
+
+.itemTitle {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pill {
+  flex: 0 0 auto;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid #e6e8ef;
+  border-radius: 999px;
+  color: #444;
+  white-space: nowrap;
+}
+
 /* ===== MoneyRain Overlay ===== */
 .money-rain {
   position: fixed;
@@ -82,181 +231,10 @@ hr { border:0; border-top: 1px solid #eceef5; margin: 14px 0; }
 
 /* ===== Calendar ===== */
 .calendar {
-  margin-top: 16px;
-}
-
-.calendarHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.calendarTitle {
-  font-weight: 700;
-}
-
-.calendarDow {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-  margin-bottom: 6px;
-  opacity: 0.8;
-  font-size: 12px;
-}
-
-.calendarDowCell {
-  text-align: center;
-}
-
-.calendarGrid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-}
-
-.calendarCell {
-  height: 36px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: #fff;
-  cursor: pointer;
-}
-
-.calendarCell.isOut {
-  opacity: 0.35;
-}
-
-.calendarCell.isToday {
-  border-width: 2px;
-}
-
-.calendarCell.isSelected {
-  outline: 2px solid #333;
-}
-
-.calendarFooter {
-  margin-top: 8px;
-  font-size: 12px;
-  opacity: 0.9;
-}
-
-/* モーダル全体（中央寄せ） */
-.modal {
-  max-width: 560px;
-  width: 90vw;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  max-height: 90vh;        /* 画面の 90% 高さまで */
-}
-
-/* フォーム部だけスクロールさせる */
-.modal-body {
-  padding: 16px 24px;
-  overflow-y: auto;
-  max-height: calc(90vh - 120px); 
-  /* 120px はヘッダー＋フッターの高さぶん（だいたいでOK） */
-}
-
-/* フッター（ボタン行）は固定で下に表示 */
-.modal-footer {
-  padding: 12px 24px 16px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  border-top: 1px solid #eee;
-}
-
-:root { color-scheme: light; }
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-  background: #f7f8fb;
-  color: #111;
-}
-.container {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 32px 16px;
-}
-.card {
-  background: #fff;
-  border: 1px solid #e6e8ef;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
-}
-.row { display: flex; gap: 12px; align-items: center; }
-.row-between { display:flex; justify-content: space-between; align-items:center; }
-h1 { margin: 0 0 12px; font-size: 40px; }
-input {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d7dbe7;
-  border-radius: 10px;
-  font-size: 14px;
-}
-label { font-size: 13px; color: #333; display:block; margin: 12px 0 6px; }
-button {
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid #d7dbe7;
-  background: #fff;
-  cursor: pointer;
-}
-button.primary {
-  background: #111;
-  color: #fff;
-  border-color: #111;
-}
-.error {
-  margin-top: 10px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid #ffb4b4;
-  background: #fff2f2;
-  color: #8a1f1f;
-  white-space: pre-wrap;
-}
-.small { color:#666; font-size: 13px; }
-hr { border:0; border-top: 1px solid #eceef5; margin: 14px 0; }
-.task { display:flex; justify-content:space-between; gap: 10px; padding: 10px 0; }
-.badge { font-size:12px; padding: 3px 8px; border:1px solid #e6e8ef; border-radius: 999px; color:#444; }
-
-/* ===== MoneyRain Overlay ===== */
-.money-rain {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 9999;
-}
-
-.money-bill {
-  position: absolute;
-  top: -12vh;
-  animation: money-fall var(--dur) linear var(--delay) both;
-  will-change: transform, opacity;
-  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.25));
-  user-select: none;
-}
-
-@keyframes money-fall {
-  0% {
-    transform: translate3d(0, 0, 0) rotate(0deg);
-  }
-  100% {
-    transform: translate3d(var(--drift), 130vh, 0) rotate(var(--rotate));
-  }
-}
-
-/* ===== Calendar ===== */
-.calendar {
+  max-width: 100%;
   margin-top: 16px;
+  overflow-x: hidden;
 }
 
 .calendarHeader {
@@ -271,10 +249,15 @@ hr { border:0; border-top: 1px solid #eceef5; margin: 14px 0; }
   font-weight: 700;
 }
 
-.calendarDow {
+.calendarDow,
+.calendarGrid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 4px;
+  width: 100%;
+}
+
+.calendarDow {
   margin-bottom: 6px;
   opacity: 0.8;
   font-size: 12px;
@@ -282,15 +265,11 @@ hr { border:0; border-top: 1px solid #eceef5; margin: 14px 0; }
 
 .calendarDowCell {
   text-align: center;
-}
-
-.calendarGrid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  min-width: 0;
 }
 
 .calendarCell {
+  min-width: 0;
   height: 36px;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -316,27 +295,24 @@ hr { border:0; border-top: 1px solid #eceef5; margin: 14px 0; }
   opacity: 0.9;
 }
 
-/* モーダル全体（中央寄せ） */
+/* モーダル */
 .modal {
   max-width: 560px;
-  width: 90vw;
+  width: min(90vw, 560px);
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
-  max-height: 90vh;        /* 画面の 90% 高さまで */
+  max-height: 90vh;
 }
 
-/* フォーム部だけスクロールさせる */
 .modal-body {
   padding: 16px 24px;
   overflow-y: auto;
-  max-height: calc(90vh - 120px); 
-  /* 120px はヘッダー＋フッターの高さぶん（だいたいでOK） */
+  max-height: calc(90vh - 120px);
 }
 
-/* フッター（ボタン行）は固定で下に表示 */
 .modal-footer {
   padding: 12px 24px 16px;
   display: flex;
@@ -377,7 +353,6 @@ hr { border:0; border-top: 1px solid #eceef5; margin: 14px 0; }
   opacity: 0.7;
 }
 
-/* ピョンピョンアニメーション */
 @keyframes bunnyHop {
   0% {
     transform: translateY(0);
@@ -387,301 +362,30 @@ hr { border:0; border-top: 1px solid #eceef5; margin: 14px 0; }
   }
 }
 
-/* ===== はみ出し対策（最重要） ===== */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-/* 画面全体の横はみ出し防止（保険） */
-html, body {
-  width: 100%;
-  overflow-x: hidden;
-}
-
-/* ===== レイアウト ===== */
-.container {
-  width: 100%;
-  max-width: 1100px;   /* 好みで 1000〜1200 */
-  margin: 0 auto;
-  padding: 24px 16px;  /* 左右余白が効いて飛び出しにくくなる */
-}
-
-/* カードが親幅を超えないように */
-.card {
-  width: 100%;
-  max-width: 100%;
-  overflow: hidden;    /* 子要素が飛び出すのを止める */
-}
-
-/* 入力系がカード幅を超えないように */
-.card input,
-.card textarea,
-.card select {
-  width: 100%;
-  max-width: 100%;
-}
-
-/* ヘッダー等の横並びが狭い画面で折り返す */
-.row-between {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-/* まずこれ。inputのはみ出しの9割が直る */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-.container {
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
-.card {
-  width: 100%;
-  overflow: hidden; /* はみ出し保険 */
-}
-
-input, button, textarea, select {
-  max-width: 100%;
-}
-
-/* これが超重要：フォーム入力を確実に幅100%に */
-.card input {
-  width: 100%;
-}
-
-/* ヘッダーなど横並びが崩れやすい箇所を折り返し */
-.row-between, .row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-/* スマホ */
-@media (max-width: 480px) {
-  .container { padding: 12px; }
-  h1 { font-size: 28px; }
-  .card { padding: 14px; }
-
-  /* タブが横幅足りない時に潰れる対策 */
-  .card button {
-    min-width: 0;
-    font-size: 12px;
+/* スマホ・狭い画面 */
+@media (max-width: 767px) {
+  .container {
+    padding: 20px 12px;
   }
-}
 
-/* はみ出し・幅計算の崩れ対策 */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-.container {
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
-.card {
-  width: 100%;
-  overflow: hidden;
-}
-
-.row-between, .row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap; /* ★スマホで崩れにくくなる */
-}
-
-/* カレンダーの崩れ対策（極端に狭い時に横スクロールで保険） */
-.calendar-wrap {
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(44px, 1fr));
-  gap: 8px;
-  min-width: 320px; /* これより狭い端末はスクロール */
-}
-
-.calendar-dow {
-  text-align: center;
-}
-
-.calendar-cell {
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 10px;
-  min-height: 72px;
-  cursor: pointer;
-}
-
-.calendar-dots {
-  display: flex;
-  gap: 4px;
-  margin-top: 6px;
-  flex-wrap: wrap;
-}
-
-/* スマホ */
-@media (max-width: 480px) {
-  .container { padding: 12px; }
-  h1 { font-size: 28px; }
-  .calendar-grid { gap: 6px; }
-  .calendar-cell { padding: 8px; min-height: 64px; }
-}
-
-/* ===== カレンダー 2カラム + 開閉 ===== */
-.cal-layout{
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 12px;
-  align-items: start;
-}
-.cal-main{ min-width: 0; } /* これ超重要：横潰れ防止 */
-.cal-sidebar{ min-width: 0; }
-
-.pool-task{
-  padding: 10px 8px;
-  border-bottom: 1px solid #eceef5;
-  cursor: grab;
-}
-.pool-task:active{ cursor: grabbing; }
-
-.cal-toolbar{
-  display: none; /* PCでは非表示 */
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 10px 0 8px;
-}
-.cal-open{ width: auto; }
-.cal-close{ display: none; }
-
-.cal-overlay{
-  display: none;
-}
-
-/* カレンダー自体は7列を死守（スマホでも潰れない設定） */
-.calendar-wrap{ overflow-x: auto; padding-bottom: 4px; }
-.calendar-grid{
-  display: grid;
-  grid-template-columns: repeat(7, minmax(38px, 1fr));
-  gap: 8px;
-}
-.calendar-cell{
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 8px;
-  min-height: 64px;
-}
-.calendar-dots{
-  display:flex;
-  gap: 4px;
-  margin-top: 6px;
-  flex-wrap: wrap;
-}
-
-/* ===== タブレット以下：縦積み & サイドは基本閉じる ===== */
-@media (max-width: 768px){
-  .cal-layout{
+  .grid2 {
     grid-template-columns: 1fr;
   }
 
-  /* サイドをモーダル風に */
-  .cal-sidebar{
-    position: fixed;
-    top: 0; left: 0;
-    height: 100vh;
-    width: min(340px, 86vw);
-    background: #f7f8fb;
-    padding: 14px;
-    overflow: auto;
-    z-index: 2000;
-    transform: translateX(-105%);
-    transition: transform .18s ease;
-  }
-  .cal-sidebar.is-open{ transform: translateX(0); }
-
-  .cal-overlay{
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.25);
-    z-index: 1999;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .18s ease;
-    display: block;
-  }
-  .cal-overlay.is-open{
-    opacity: 1;
-    pointer-events: auto;
+  .item {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
-  .cal-toolbar{
-    display: flex;
+  .pill {
+    align-self: flex-start;
   }
-  .cal-close{ display: inline-block; }
+
+  .modal-body {
+    padding: 14px 16px;
+  }
+
+  .modal-footer {
+    padding: 12px 16px 14px;
+  }
 }
-
-/* さらに小さい端末 */
-@media (max-width: 420px){
-  .calendar-grid{ grid-template-columns: repeat(7, minmax(32px, 1fr)); gap: 6px; }
-  .calendar-cell{ padding: 6px; min-height: 56px; }
-}
-
-/* PCでもタスクリストを閉じたらカレンダーを全幅に */
-.cal-layout.is-closed {
-  grid-template-columns: 1fr;
-}
-
-.cal-layout.is-closed .cal-sidebar {
-  display: none;
-}
-
-html, body, #root {
-  height: 100%;
-  width: 100%;
-  overflow-x: hidden;   /* 横スクロール禁止 */
-}
-
-* {
-  box-sizing: border-box;
-}
-
-/* iOSのステータスバー/ホームバーに被らない */
-.container {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;   /* 横スクロール禁止（念のため二重） */
-  padding-left: 12px;
-  padding-right: 12px;
-
-  /* ここが重要：safe area */
-  padding-top: calc(12px + env(safe-area-inset-top));
-  padding-bottom: calc(12px + env(safe-area-inset-bottom));
-}
-
-/* もしrow-between等が原因で横にはみ出す場合の保険 */
-.row-between {
-  min-width: 0;
-}
-.card {
-  min-width: 0;
-}
-
-body {
-  overscroll-behavior-x: none;
-}
-
-
-
-
