@@ -337,8 +337,8 @@ hr {
 
 .splash-bunny {
   font-size: 64px;
-  animation: bunnyHop 0.7s ease-in-out infinite alternate;
-  transform-origin: bottom center;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+    "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
 }
 
 .splash-title {
