@@ -13,15 +13,14 @@ import {
 } from "../lib/api";
 
 import MoneyRainOverlay from "../components/MoneyRainOverlay";
-
 import Calender, { DragTaskPayload, ScheduleEvent } from "./Calender";
 import ScheduleModal from "../components/ScheduleModel";
 
 type ScheduleHistoryItem = {
   id: string;
   scheduleId: string;
-  date: string;   // "YYYY-MM-DD"
-  doneAt: string; // ISO
+  date: string;
+  doneAt: string;
   title: string;
 };
 
@@ -75,10 +74,10 @@ function uid() {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
-// 便宜上ここにも YMD ヘルパー
 function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
+
 function toYMD(d: Date) {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
@@ -88,9 +87,7 @@ type TabId = "todo" | "calendar" | "history";
 export default function GoalsPage() {
   const nav = useNavigate();
 
-  // ★ スプラッシュ（lifeRabbit）
   const [showSplash, setShowSplash] = useState(true);
-
   const [goals, setGoals] = useState<GoalListItem[]>([]);
   const [tasksByGoal, setTasksByGoal] = useState<Record<number, TaskItem[]>>({});
   const [error, setError] = useState<string | null>(null);
@@ -98,37 +95,22 @@ export default function GoalsPage() {
   const [newTitle, setNewTitle] = useState("副業で月5万");
   const [newIncome, setNewIncome] = useState(600000);
 
-  // MoneyRain用
   const [rainSeed, setRainSeed] = useState(0);
   const prevTotalEarnedRef = useRef<number>(0);
 
-  // schedules
-  const [schedules, setSchedules] = useState<ScheduleEvent[]>(() =>
-    loadSchedules()
-  );
+  const [schedules, setSchedules] = useState<ScheduleEvent[]>(() => loadSchedules());
 
-  // モーダル
   const [modalOpen, setModalOpen] = useState(false);
   const [modalBaseDate, setModalBaseDate] = useState<Date>(new Date());
-  const [modalInitial, setModalInitial] =
-    useState<Partial<ScheduleEvent> | null>(null);
-  // ★ クリックした「その日」の情報
+  const [modalInitial, setModalInitial] = useState<Partial<ScheduleEvent> | null>(null);
   const [modalClickedDate, setModalClickedDate] = useState<string | null>(null);
 
-  // Show Tasks 開閉
   const [openGoals, setOpenGoals] = useState<Record<number, boolean>>({});
+  const [history, setHistory] = useState<ScheduleHistoryItem[]>(() => loadHistory());
+  const [activeTab, setActiveTab] = useState<TabId>("todo");
 
-  // ★ 履歴
-  const [history, setHistory] = useState<ScheduleHistoryItem[]>(() =>
-    loadHistory()
-  );
-
-  // ★ タブ
-  const [activeTab, setActiveTab] = useState<TabId>("calendar");
-
-  // ★ 初回マウント時に lifeRabbit スプラッシュを少しだけ表示
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 1500); // 1.5秒表示
+    const timer = setTimeout(() => setShowSplash(false), 1500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -142,7 +124,6 @@ export default function GoalsPage() {
     setTasksByGoal((m) => ({ ...m, [goalId]: t }));
   }
 
-  // 初回：Goal 一覧だけ読み込み
   useEffect(() => {
     (async () => {
       try {
@@ -154,14 +135,12 @@ export default function GoalsPage() {
     })();
   }, []);
 
-  // ★ Goal が変わったら、全 Goal のタスクをまとめて取得
   useEffect(() => {
     (async () => {
       const map: Record<number, TaskItem[]> = {};
       for (const g of goals) {
         try {
-          const ts = await listTasks(g.id);
-          map[g.id] = ts;
+          map[g.id] = await listTasks(g.id);
         } catch {
           map[g.id] = [];
         }
@@ -170,7 +149,6 @@ export default function GoalsPage() {
     })();
   }, [goals]);
 
-  // 合計獲得 → 雨
   useEffect(() => {
     const total = goals.reduce(
       (sum: number, g: any) => sum + (g.earnedAmount ?? g.earned ?? 0),
@@ -184,12 +162,10 @@ export default function GoalsPage() {
     return goals.reduce((sum, g: any) => sum + (g.earnedAmount ?? 0), 0);
   }, [goals]);
 
-  // schedules 永続化
   useEffect(() => {
     saveSchedules(schedules);
   }, [schedules]);
 
-  // 履歴 永続化
   useEffect(() => {
     saveHistory(history);
   }, [history]);
@@ -207,6 +183,7 @@ export default function GoalsPage() {
   async function onAddTask(goalId: number) {
     const title = prompt("タスク名を入力してください");
     if (!title) return;
+
     setError(null);
     try {
       await addTask(goalId, title);
@@ -223,16 +200,16 @@ export default function GoalsPage() {
       await completeTask(taskId);
       await refreshGoals();
       await loadTasks(goalId);
-      // ★ ここで「Goalタスクの履歴」にも足すのは次ステップでOK
+      setRainSeed(Date.now());
     } catch (e: any) {
       setError(e?.message ?? "完了処理に失敗しました");
     }
   }
 
-  // ★ 詳細タスクのタイトル編集（フロントのみ）
   function onEditTask(task: TaskItem, goalId: number) {
     const next = prompt("タスク名を編集", task.title);
     if (next == null) return;
+
     const trimmed = next.trim();
     if (!trimmed) {
       alert("タスク名が空です");
@@ -247,13 +224,11 @@ export default function GoalsPage() {
     }));
   }
 
- function logout() {
-  clearToken();
+  function logout() {
+    clearToken();
+    nav("/login", { replace: true });
+  }
 
-  nav("/login", { replace: true });
-}
-
-  // ★ カレンダー：日付クリック → 新規追加モーダル
   function openNewSchedule(
     date: Date,
     initial?: Partial<ScheduleEvent>,
@@ -265,7 +240,6 @@ export default function GoalsPage() {
     setModalOpen(true);
   }
 
-  // ★ ドロップ：タスクを落とした日を開始日に
   function handleDropTask(date: Date, task: DragTaskPayload) {
     openNewSchedule(
       date,
@@ -278,11 +252,7 @@ export default function GoalsPage() {
     );
   }
 
-  // ★ 保存（新規/編集）
-  function handleSaveSchedule(
-    data: Omit<ScheduleEvent, "id">,
-    editingId?: string
-  ) {
+  function handleSaveSchedule(data: Omit<ScheduleEvent, "id">, editingId?: string) {
     setSchedules((prev) => {
       if (editingId) {
         return prev.map((x) =>
@@ -300,13 +270,11 @@ export default function GoalsPage() {
     setModalOpen(false);
   }
 
-  // ★ カレンダー上のイベントクリック → 編集モード + その日だけ完了
   function handleEventClick(ev: ScheduleEvent, dateStr: string) {
     const [y, m, d] = dateStr.split("-").map(Number);
     openNewSchedule(new Date(y, m - 1, d), ev, dateStr);
   }
 
-  // ★ Show Tasks 開閉（ToDoタブ用）
   async function handleToggleTasks(goalId: number) {
     setError(null);
     const isOpen = openGoals[goalId];
@@ -326,59 +294,47 @@ export default function GoalsPage() {
     }
   }
 
-  // ★ 「この日だけ完了」トグル
-  function handleToggleDoneForDate(
-    scheduleId: string,
-    dateStr: string,
-    done: boolean
-  ) {
+  function handleToggleDoneForDate(scheduleId: string, dateStr: string, done: boolean) {
     let scheduleTitle = "";
 
-    // completedDates を更新
     setSchedules((prev) =>
       prev.map((ev) => {
         if (ev.id !== scheduleId) return ev;
+
         scheduleTitle = ev.title;
         const prevDates = ev.completedDates ?? [];
-        let nextDates: string[];
-        if (done) {
-          // すでに含まれていればそのまま
-          if (prevDates.includes(dateStr)) return ev;
-          nextDates = [...prevDates, dateStr];
-        } else {
-          nextDates = prevDates.filter((d) => d !== dateStr);
-        }
+        const nextDates = done
+          ? prevDates.includes(dateStr)
+            ? prevDates
+            : [...prevDates, dateStr]
+          : prevDates.filter((d) => d !== dateStr);
+
         return { ...ev, completedDates: nextDates };
       })
     );
 
-    // ★ 日々のタスク完了でも「お金の雨」を降らせる
     if (done) {
       setRainSeed(Date.now());
-    }
-
-    // 履歴も更新
-    if (done) {
-      const item: ScheduleHistoryItem = {
-        id: uid(),
-        scheduleId,
-        date: dateStr,
-        doneAt: new Date().toISOString(),
-        title: scheduleTitle,
-      };
-      setHistory((prev) => [...prev, item]);
+      setHistory((prev) => [
+        ...prev,
+        {
+          id: uid(),
+          scheduleId,
+          date: dateStr,
+          doneAt: new Date().toISOString(),
+          title: scheduleTitle,
+        },
+      ]);
     } else {
       setHistory((prev) =>
-        prev.filter(
-          (h) => !(h.scheduleId === scheduleId && h.date === dateStr)
-        )
+        prev.filter((h) => !(h.scheduleId === scheduleId && h.date === dateStr))
       );
     }
   }
 
-  // ★ カレンダー左用：全 Goal の未完了タスクをフラット化
   const dragTaskList = useMemo(() => {
     const items: { goalId: number; goalTitle: string; task: TaskItem }[] = [];
+
     for (const g of goals) {
       const ts = tasksByGoal[g.id] ?? [];
       ts
@@ -387,26 +343,48 @@ export default function GoalsPage() {
           items.push({ goalId: g.id, goalTitle: g.title, task: t })
         );
     }
+
     return items;
   }, [goals, tasksByGoal]);
 
-  // ★ スプラッシュ表示中は lifeRabbit 画面だけ表示
+  const todayYmd = toYMD(new Date());
+
+  const todaySchedules = useMemo(() => {
+    return schedules.filter((ev: any) => {
+      const start = ev.startDate ?? ev.date ?? ev.start ?? "";
+      const end = ev.endDate ?? ev.date ?? ev.end ?? start;
+      if (!start) return false;
+      return start <= todayYmd && todayYmd <= end;
+    });
+  }, [schedules, todayYmd]);
+
+  const uniqueTodaySchedules = Array.from(
+    new Map(todaySchedules.map((ev: any) => [ev.title, ev])).values()
+  );
+  
+  const todayCompletedCount = uniqueTodaySchedules.filter((ev: any) =>
+    (ev.completedDates ?? []).includes(todayYmd)
+  ).length;
+  
+  const todayTotalCount = uniqueTodaySchedules.length;
+  const todayProgress =
+    todayTotalCount === 0 ? 0 : Math.round((todayCompletedCount / todayTotalCount) * 100);
+  const todayEarned = todayCompletedCount * 164;
+
   if (showSplash) {
     return (
       <div className="splash-root">
-        <div className="splash-bunny">🐰</div>
+        <div className="splash-bunny">Goal</div>
         <div className="splash-title">lifeRabbit</div>
-        <div className="splash-sub">毎日のタスクでお金の雨を降らせよう</div>
+        <div className="splash-sub">Earn money by completing daily tasks</div>
       </div>
     );
   }
 
-  // ここから通常画面
   return (
     <div className="container">
       <MoneyRainOverlay seed={rainSeed} />
 
-      {/* ヘッダー */}
       <div className="row-between">
         <h1>Goals</h1>
         <button onClick={logout}>Logout</button>
@@ -416,22 +394,52 @@ export default function GoalsPage() {
         合計獲得（推定）： <b>{totalEarned.toFixed(2)} USD</b>
       </div>
 
-      {/* ★ タブバー */}
-      <div className="card" style={{ marginBottom: 16, padding: "6px 8px" }}>
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div className="row-between" style={{ marginBottom: 8 }}>
+          <div>
+            <h2 style={{ margin: 0 }}>今日の進捗</h2>
+            <div className="small muted">
+              {todayCompletedCount}/{todayTotalCount} 件完了
+            </div>
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 800 }}>{todayProgress}%</div>
+        </div>
+
         <div
           style={{
-            display: "flex",
-            gap: 8,
-            justifyContent: "space-around",
+            height: 14,
+            background: "#E5E7EB",
+            borderRadius: 999,
+            overflow: "hidden",
           }}
         >
-          {(
-            [
-              { id: "todo", label: "ToDo" },
-              { id: "calendar", label: "カレンダー" },
-              { id: "history", label: "履歴" },
-            ] as { id: TabId; label: string }[]
-          ).map((tab) => (
+        <div
+          style={{
+              width: `${todayProgress}%`,
+              height: "100%",
+              borderRadius: 999,
+              transition: "0.4s ease",
+              transform: todayProgress === 100 ? "scale(1.02)" : "scale(1)",
+              boxShadow: todayProgress === 100 ? "0 0 12px #FACC15" : "none",
+              background:
+                todayProgress === 100
+                  ? "#FACC15"
+                  : "linear-gradient(90deg, #38BDF8, #22C55E)",
+            }}
+          />
+        </div>
+        <div style={{ marginTop: 10, fontWeight: 700 }}>
+          💰 今日の収益：+{todayEarned}円
+        </div>
+      </div>
+
+      <div className="card" style={{ marginBottom: 16, padding: "6px 8px" }}>
+        <div style={{ display: "flex", gap: 8, justifyContent: "space-around" }}>
+          {[
+            { id: "todo" as TabId, label: "ToDo" },
+            { id: "calendar" as TabId, label: "カレンダー" },
+            { id: "history" as TabId, label: "履歴" },
+          ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -443,8 +451,7 @@ export default function GoalsPage() {
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",
-                background:
-                  activeTab === tab.id ? "black" : "rgba(0,0,0,0.03)",
+                background: activeTab === tab.id ? "black" : "rgba(0,0,0,0.03)",
                 color: activeTab === tab.id ? "white" : "#555",
               }}
             >
@@ -454,18 +461,13 @@ export default function GoalsPage() {
         </div>
       </div>
 
-      {/* === ToDo タブ === */}
       {activeTab === "todo" && (
         <>
-          {/* 新規目標 */}
           <div className="card" style={{ marginBottom: 16 }}>
             <h2 style={{ marginTop: 0 }}>新規目標</h2>
 
             <label>Title</label>
-            <input
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-            />
+            <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
 
             <label>Annual Income（JPY換算でもOK）</label>
             <input
@@ -483,7 +485,6 @@ export default function GoalsPage() {
 
           {error && <div className="error">{error}</div>}
 
-          {/* goals & 詳細タスク */}
           {goals.map((g: any) => (
             <div className="card" key={g.id} style={{ marginBottom: 14 }}>
               <div className="row-between">
@@ -508,7 +509,6 @@ export default function GoalsPage() {
                 </div>
               </div>
 
-              {/* 詳細タスク */}
               {openGoals[g.id] && tasksByGoal[g.id] && (
                 <>
                   <hr />
@@ -546,10 +546,7 @@ export default function GoalsPage() {
                           >
                             {t.title}{" "}
                             {!t.completed && (
-                              <span
-                                className="badge"
-                                style={{ marginLeft: 8 }}
-                              >
+                              <span className="badge" style={{ marginLeft: 8 }}>
                                 drag
                               </span>
                             )}
@@ -564,9 +561,7 @@ export default function GoalsPage() {
                         </div>
 
                         <div className="row" style={{ gap: 8 }}>
-                          <button onClick={() => onEditTask(t, g.id)}>
-                            Edit
-                          </button>
+                          <button onClick={() => onEditTask(t, g.id)}>Edit</button>
                           {!t.completed && (
                             <button
                               className="primary"
@@ -586,7 +581,6 @@ export default function GoalsPage() {
         </>
       )}
 
-      {/* === カレンダー タブ === */}
       {activeTab === "calendar" && (
         <div className="card" style={{ marginBottom: 16 }}>
           <div className="row-between">
@@ -603,7 +597,6 @@ export default function GoalsPage() {
               alignItems: "flex-start",
             }}
           >
-            {/* 左：タスクリスト（ドラッグ専用） */}
             <div
               style={{
                 background: "#fafafa",
@@ -624,13 +617,7 @@ export default function GoalsPage() {
               {dragTaskList.length === 0 ? (
                 <div className="small muted">未完了タスクはありません</div>
               ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 6,
-                  }}
-                >
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {dragTaskList.map(({ goalId, goalTitle, task }) => (
                     <div
                       key={`${goalId}-${task.id}`}
@@ -677,7 +664,6 @@ export default function GoalsPage() {
               )}
             </div>
 
-            {/* 右：カレンダー本体 */}
             <div style={{ overflowX: "auto" }}>
               <Calender
                 events={schedules}
@@ -690,7 +676,6 @@ export default function GoalsPage() {
         </div>
       )}
 
-      {/* スケジュールモーダル（どのタブでも共通） */}
       <ScheduleModal
         open={modalOpen}
         baseDate={modalBaseDate}
@@ -702,7 +687,6 @@ export default function GoalsPage() {
         onToggleDoneForDate={handleToggleDoneForDate}
       />
 
-      {/* === 履歴タブ === */}
       {activeTab === "history" && (
         <>
           {history.length === 0 ? (
